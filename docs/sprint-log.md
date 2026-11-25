@@ -47,3 +47,12 @@
 **Points pour la rétro**
 - Ordre de mise en route : migrations → `create-demo-users.ts` → (seed automatique) ; avant la soutenance, bouton « Réinitialiser la démo ».
 - PGlite valide la logique SQL et la RLS, pas PostgREST ni l'authentification réelle : refaire un passage sur le vrai projet Supabase.
+
+## Sprint 0 — base Supabase en ligne (25/11/2026)
+- Projet Supabase `la-taniere-coach` : migrations 0001 à 0004 appliquées (schéma, RLS, seed de démo, durcissement).
+- 11 comptes de démo créés (karim, lea + 9 coachés) ; identifiants uniquement dans `.env.local` (non versionné).
+- `seed_demo()` exécuté : 10 coachés, 82 exercices, 202 aliments, 7 modèles, 130 séances, 1 480 séries, 9 retours (5 à traiter), 3 rendez-vous, 32 créneaux, 20 factures.
+- Contrôles RLS en base : Léa ne voit que ses données (1 coachée, 1 retour, aucun rendez-vous) ; Karim voit ses 10 coachés et jamais Strava.
+- Histoire de Léa vérifiée : squat 50 → 60 kg, retour « Squat facile, j'aurais pu mettre +5 kg », RPE 6.
+- Audit sécurité : helpers RLS fermés aux visiteurs anonymes, déclencheur non appelable, search_path figé. `book_slot` et `submit_intake` restent publics (prise de rendez-vous). Reste : activer la protection contre les mots de passe compromis (réglage Auth).
+- En attente : dépôt GitHub puis déploiement Vercel (connexion de démo testée de bout en bout à ce moment-là).
