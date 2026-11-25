@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getMyReport } from "@/lib/bilans-progression/coache/data";
 import { hasContent } from "@/lib/bilans-progression/coache/parse";
-import { CoachNote, ReportBody, ReportHeader, ReportUnavailable } from "@/components/bilans-progression/coache/ReportView";
+import { CoachNote, ProgressReport, ReportHeader, ReportNotice, type ProgressReportMeta } from "@/components/bilans-progression/report/ProgressReport";
 import { MarkReportRead } from "@/components/bilans-progression/coache/MarkReportRead";
 import { IconChevron } from "@/components/icons";
 
@@ -18,7 +18,11 @@ function BackLink() {
   );
 }
 
-export default function Page({ params }: { params: Promise<{ id: string }> }) {
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? null;
+
+export default function Page({ params, searchParams }: Props) {
   return (
     <section className="flex flex-col pb-6">
       <BackLink />
@@ -30,14 +34,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
         }
       >
-        <ReportContent params={params} />
+        <ReportContent params={params} searchParams={searchParams} />
       </Suspense>
     </section>
   );
 }
 
-async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+async function ReportContent({ params, searchParams }: Props) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const res = await getMyReport(id);
 
   if (res.state !== "ok") {
@@ -52,12 +56,27 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const { report, coachFirstName } = res;
+  const meta: ProgressReportMeta = {
+    title: report.title,
+    periodStart: report.periodStart,
+    periodEnd: report.periodEnd,
+    sentAt: report.sentAt,
+    coachName: coachFirstName,
+    coachNote: report.coachNote,
+  };
+  const { parsed } = report;
   return (
-    <article className="mt-2">
+    <article className="mt-2 min-w-0">
       {report.readAt === null && <MarkReportRead reportId={report.id} />}
-      <ReportHeader meta={report} coachFirstName={coachFirstName} />
-      {report.coachNote && <CoachNote note={report.coachNote} coachFirstName={coachFirstName} />}
-      {report.data && hasContent(report.data) ? <ReportBody data={report.data} /> : <ReportUnavailable />}
+      {parsed.status === "ok" && hasContent(parsed.data) ? (
+        <ProgressReport data={parsed.data} meta={meta} variant="coache" exerciseParam={first(query.exercice)} viewParam={first(query.vue)} />
+      ) : (
+        <>
+          <ReportHeader meta={meta} variant="coache" />
+          {report.coachNote && <CoachNote note={report.coachNote} coachName={coachFirstName} />}
+          <ReportNotice>{parsed.status === "ancien" ? "Ce bilan a été envoyé avant la nouvelle version." : "Ce bilan ne peut pas être affiché."}</ReportNotice>
+        </>
+      )}
     </article>
   );
 }

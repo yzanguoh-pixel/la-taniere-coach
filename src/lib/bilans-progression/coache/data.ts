@@ -1,7 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { ProgressReportData } from "@/lib/bilans-progression/types";
-import { parseReportData } from "./parse";
+import { parseReportData, type ParsedReport } from "./parse";
 
 /** Lecture des bilans de progression du coaché connecté. La RLS limite à ses propres bilans ; on filtre aussi par client_id. */
 
@@ -19,7 +18,7 @@ export type ReportList = { state: "indisponible" } | { state: "ok"; coachFirstNa
 export type ReportDetail =
   | { state: "indisponible" }
   | { state: "introuvable" }
-  | { state: "ok"; coachFirstName: string; report: ReportSummary & { coachNote: string | null; data: ProgressReportData | null } };
+  | { state: "ok"; coachFirstName: string; report: ReportSummary & { coachNote: string | null; parsed: ParsedReport } };
 
 const firstWord = (s: string | null | undefined, fallback: string) => (s ?? "").trim().split(/\s+/)[0] || fallback;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -85,7 +84,7 @@ export async function getMyReport(id: string): Promise<ReportDetail> {
       sentAt: r.sent_at,
       readAt: r.read_at,
       coachNote: r.coach_note?.trim() ? r.coach_note.trim() : null,
-      data: parseReportData(r.data),
+      parsed: parseReportData(r.data),
     },
   };
 }

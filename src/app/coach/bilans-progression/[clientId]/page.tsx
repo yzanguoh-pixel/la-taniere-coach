@@ -11,33 +11,28 @@ import { todayParis } from "@/lib/progression/compute";
 
 export const metadata: Metadata = { title: "Préparer un bilan de progression" };
 
-type Props = { params: Promise<{ clientId: string }> };
+type Props = { params: Promise<{ clientId: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 /** Aperçu du bilan calculé pour un coaché, mot du coach, envoi et historique. */
-export default function Page({ params }: Props) {
+export default function Page({ params, searchParams }: Props) {
   return (
     <article className="flex flex-col gap-8">
       <Link href="/coach/bilans-progression" className="inline-flex min-h-11 items-center self-start text-[15px] font-semibold text-olive-fonce hover:underline">
         ← Bilans de progression
       </Link>
       <Suspense fallback={<PrepareSkeleton />}>
-        <Prepare params={params} />
+        <Prepare params={params} searchParams={searchParams} />
       </Suspense>
     </article>
   );
 }
 
 /** Cible de charge (clé `<exercice>_kg`, hors poids) pour la ligne « Objectif » du graphique. */
-function liftTarget(targets: Record<string, unknown>): number | null {
-  for (const [k, v] of Object.entries(targets)) {
-    const n = Number(v);
-    if (k.endsWith("_kg") && k !== "poids_kg" && Number.isFinite(n) && n > 0) return n;
-  }
-  return null;
-}
 
-async function Prepare({ params }: Props) {
+async function Prepare({ params, searchParams }: Props) {
   const { clientId } = await params;
+  const sp = await searchParams;
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const auth = await requireCoach();
   if ("error" in auth) return <p className="liste-groupee p-5 text-texte-2">{auth.error}</p>;
   const period = defaultPeriod(todayParis(new Date()));
@@ -46,7 +41,6 @@ async function Prepare({ params }: Props) {
   const data = buildProgressReport(loaded.input, period);
   const history = await listReports(auth.supabase, clientId);
   const { client } = loaded;
-  const target = data.goal.progressText && !data.goal.progressText.startsWith("Poids") ? liftTarget(loaded.input.targets) : null;
 
   return (
     <>
@@ -57,7 +51,7 @@ async function Prepare({ params }: Props) {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section aria-label="Aperçu du bilan" className="min-w-0 rounded-[20px] bg-fond">
-          <ReportPreview data={data} title={reportTitle(period)} targetKg={target} />
+          <ReportPreview data={data} title={reportTitle(period)} periodStart={period.start} periodEnd={period.end} coachName="Karim" exerciseParam={one(sp.exercice)} viewParam={one(sp.vue)} />
         </section>
         <SendReportForm clientId={client.id} firstName={client.firstName} nextFocus={data.nextFocus} />
       </div>

@@ -21,3 +21,9 @@ export const signed = (v: number, digits = 1) => (v > 0 ? `+${nb(v, digits)}` : 
 export const shortDay = (iso: string) => dayMonth(iso, "short");
 /** « 28 octobre » */
 export const longDay = (iso: string) => dayMonth(iso, "long");
+/** Note du radar : 2.8 → « 2,8 », 3 → « 3,0 » */
+export const note = (v: number) => v.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+/** Volume soulevé : 12450 → « 12 450 kg » ; ≥ 100 t → « 124 t » */
+export const volume = (kg: number) => (kg >= 100_000 ? `${nb(kg / 1000, 0)} t` : `${nb(Math.round(kg), 0)} kg`);
+/** « mardi » */
+export const weekday = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "long", timeZone: "UTC" });

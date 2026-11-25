@@ -1,6 +1,6 @@
 import "server-only";
 import { coachSupabase, type Supabase } from "@/lib/coach/supabase";
-import { addDays, type Period, type ReportInput, type ReportSession } from "./compute";
+import { addDays, previousPeriod, type Period, type ReportInput, type ReportSession } from "./compute";
 import type { ProgressReportData } from "./types";
 
 /**
@@ -88,62 +88,87 @@ export type ClientIdentity = { id: string; fullName: string; firstName: string; 
 type RawSession = {
   id: string;
   date: string;
+  label: string | null;
+  name: string | null;
   status: ReportSession["status"];
   mode: string | null;
   session_exercises: {
     exercise_id: string;
+    position: number | null;
     exercises: { name_fr: string; category: string | null } | null;
-    sets: { target_load_kg: number | string | null; load_kg: number | string | null; reps: number | null; done: boolean }[];
+    sets: { set_number: number; target_load_kg: number | string | null; load_kg: number | string | null; reps: number | null; rpe: number | string | null; done: boolean }[];
   }[];
 };
 
+/** Jours de pesées lus avant la période précédente, pour connaître le poids de corps si aucune pesée récente. */
+const WEIGHT_LOOKBACK_DAYS = 90;
+
 /**
- * Données nécessaires au calcul du bilan d'un coaché sur une période.
- * Les séances sont lues depuis 4 semaines avant la période pour connaître la charge de travail de départ.
+ * Données nécessaires au calcul du bilan d'un coaché : période du bilan ET période précédente de même durée
+ * (radar « avant », charge de départ). Toutes les lectures partent en parallèle (un aller-retour), filtrées par la RLS coach
+ * (les activités Strava sont masquées au coach par la RLS ; le filtre `source` le redit explicitement).
  * Renvoie null si le coaché n'existe pas ou n'appartient pas au coach (RLS).
  */
 export async function loadReportInput(supabase: Supabase, clientId: string, period: Period): Promise<{ client: ClientIdentity; input: ReportInput } | null> {
   if (!UUID.test(clientId)) return null;
-  const { data: c } = await supabase
-    .from("clients")
-    .select("id, goal, targets, sessions_per_week, status, profiles!clients_profile_id_fkey(full_name, initials)")
-    .eq("id", clientId)
-    .maybeSingle();
+  const from = previousPeriod(period).start;
+  const to = period.end;
+
+  const [clientRes, sessionsRes, feedbackRes, weightsRes, foodRes, goalsRes, activitiesRes] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id, goal, targets, sessions_per_week, weight_kg, status, profiles!clients_profile_id_fkey(full_name, initials)")
+      .eq("id", clientId)
+      .maybeSingle(),
+    supabase
+      .from("client_sessions")
+      .select(
+        "id, date, label, name, status, mode, session_exercises ( exercise_id, position, exercises ( name_fr, category ), sets ( set_number, target_load_kg, load_kg, reps, rpe, done ) )",
+      )
+      .eq("client_id", clientId)
+      .gte("date", from)
+      .lte("date", to)
+      .order("date", { ascending: true }),
+    supabase
+      .from("session_feedback")
+      .select("rpe, feeling, pain_zone, client_sessions!inner(date)")
+      .eq("client_id", clientId)
+      .gte("client_sessions.date", from)
+      .lte("client_sessions.date", to),
+    supabase.from("weight_logs").select("date, weight_kg").eq("client_id", clientId).gte("date", addDays(from, -WEIGHT_LOOKBACK_DAYS)).lte("date", to).order("date"),
+    supabase.from("food_log_entries").select("date, kcal, protein_g").eq("client_id", clientId).gte("date", from).lte("date", to),
+    supabase.from("nutrition_goals").select("day_type, kcal, protein_g").eq("client_id", clientId),
+    supabase.from("activities").select("date, duration_min, distance_km").eq("client_id", clientId).neq("source", "strava").gte("date", from).lte("date", to),
+  ]);
+
+  const c = clientRes.data;
   if (!c) return null;
   const profile = one(c.profiles as unknown as ProfileName | ProfileName[] | null);
   const fullName = profile?.full_name ?? "Coaché";
-  const lookback = addDays(period.start, -28);
-
-  const [sessionsRes, feedbackRes, weightsRes, foodRes, goalsRes] = await Promise.all([
-    supabase
-      .from("client_sessions")
-      .select("id, date, status, mode, session_exercises ( exercise_id, exercises ( name_fr, category ), sets ( target_load_kg, load_kg, reps, done ) )")
-      .eq("client_id", clientId)
-      .gte("date", lookback)
-      .lte("date", period.end)
-      .order("date", { ascending: true }),
-    supabase.from("session_feedback").select("rpe, client_sessions!inner(date)").eq("client_id", clientId).gte("client_sessions.date", period.start).lte("client_sessions.date", period.end),
-    supabase.from("weight_logs").select("date, weight_kg").eq("client_id", clientId).gte("date", period.start).lte("date", period.end).order("date"),
-    supabase.from("food_log_entries").select("date, kcal").eq("client_id", clientId).gte("date", period.start).lte("date", period.end),
-    supabase.from("nutrition_goals").select("kcal").eq("client_id", clientId),
-  ]);
 
   const sessions: ReportSession[] = ((sessionsRes.data ?? []) as unknown as RawSession[]).map((s) => ({
     id: s.id,
     date: s.date,
+    label: s.label,
+    name: s.name,
     status: s.status,
     mode: s.mode === "presentiel" ? "presentiel" : "solo",
-    exercises: (s.session_exercises ?? []).map((se) => ({
-      exerciseId: se.exercise_id,
-      name: se.exercises?.name_fr ?? "Exercice",
-      category: se.exercises?.category ?? null,
-      sets: (se.sets ?? []).map((x) => ({ targetKg: toNum(x.target_load_kg), loadKg: toNum(x.load_kg), reps: x.reps, done: x.done })),
-    })),
+    exercises: [...(s.session_exercises ?? [])]
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .map((se) => ({
+        exerciseId: se.exercise_id,
+        name: se.exercises?.name_fr ?? "Exercice",
+        category: se.exercises?.category ?? null,
+        sets: [...(se.sets ?? [])]
+          .sort((a, b) => a.set_number - b.set_number)
+          .map((x) => ({ targetKg: toNum(x.target_load_kg), loadKg: toNum(x.load_kg), reps: x.reps, rpe: toNum(x.rpe), done: x.done })),
+      })),
   }));
 
-  const feedback = ((feedbackRes.data ?? []) as unknown as { rpe: number; client_sessions: { date: string } | { date: string }[] | null }[])
-    .map((f) => ({ rpe: f.rpe, sessionDate: one(f.client_sessions)?.date ?? "" }))
-    .filter((f) => f.sessionDate);
+  type RawFeedback = { rpe: number; feeling: string; pain_zone: string | null; client_sessions: { date: string } | { date: string }[] | null };
+  const feedback = ((feedbackRes.data ?? []) as unknown as RawFeedback[])
+    .map((f) => ({ rpe: Number(f.rpe), feeling: f.feeling, painZone: f.pain_zone, sessionDate: one(f.client_sessions)?.date ?? "" }))
+    .filter((f) => f.sessionDate && Number.isFinite(f.rpe));
 
   const targets = c.targets && typeof c.targets === "object" && !Array.isArray(c.targets) ? (c.targets as Record<string, unknown>) : {};
 
@@ -153,11 +178,15 @@ export async function loadReportInput(supabase: Supabase, clientId: string, peri
       goal: c.goal,
       targets,
       sessionsPerWeek: c.sessions_per_week,
+      profileWeightKg: toNum(c.weight_kg),
       sessions,
       feedback,
-      weights: (weightsRes.data ?? []).map((w) => ({ date: w.date, kg: Number(w.weight_kg) })).filter((w) => Number.isFinite(w.kg)),
-      food: (foodRes.data ?? []).map((f) => ({ date: f.date, kcal: Number(f.kcal) })).filter((f) => Number.isFinite(f.kcal)),
-      kcalGoals: (goalsRes.data ?? []).map((g) => g.kcal).filter((k) => Number.isFinite(k)),
+      weights: (weightsRes.data ?? []).map((w) => ({ date: w.date, kg: Number(w.weight_kg) })).filter((w) => Number.isFinite(w.kg) && w.kg > 0),
+      food: (foodRes.data ?? []).map((f) => ({ date: f.date, kcal: Number(f.kcal), proteinG: toNum(f.protein_g) })).filter((f) => Number.isFinite(f.kcal)),
+      nutritionGoals: (goalsRes.data ?? [])
+        .map((g) => ({ dayType: g.day_type, kcal: Number(g.kcal), proteinG: toNum(g.protein_g) }))
+        .filter((g) => Number.isFinite(g.kcal) && g.kcal > 0),
+      activities: (activitiesRes.data ?? []).map((a) => ({ date: a.date, durationMin: toNum(a.duration_min), distanceKm: toNum(a.distance_km) })),
     },
   };
 }
