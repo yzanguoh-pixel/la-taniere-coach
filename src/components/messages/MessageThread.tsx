@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ThreadMessage } from "@/lib/messages/thread";
 import { messageDayKey, messageDayLabel, messageTime } from "@/lib/messages/format";
 import { IconMessages } from "@/components/icons";
@@ -13,10 +14,16 @@ type Props = {
   otherLabel?: string;
   /** Texte du fil vide (par défaut, celui de l'espace coaché). */
   emptyText?: string;
+  /**
+   * Lien « Voir le bilan » sous un événement bilan de progression (payload.type === 'bilan_progression').
+   * Non fourni : côté coaché → /app/progression/bilans/<report_id> ; côté coach → pas de lien.
+   * Chaîne : lien fixe (ex. côté coach `/coach/bilans-progression/<client_id>`). null : jamais de lien.
+   */
+  bilanHref?: string | null;
 };
 
 /** Fil de messages : bulles texte et pastilles « événement » centrées, groupées par jour. */
-export function MessageThread({ messages, viewer, otherName, otherLabel, emptyText }: Props) {
+export function MessageThread({ messages, viewer, otherName, otherLabel, emptyText, bilanHref }: Props) {
   if (messages.length === 0) {
     return (
       <div className="liste-groupee flex flex-col items-center gap-2 px-6 py-10 text-center">
@@ -45,7 +52,7 @@ export function MessageThread({ messages, viewer, otherName, otherLabel, emptyTe
         <section key={g.key} aria-label={g.label} className="flex flex-col gap-2.5">
           <h2 className="text-center text-legende font-medium text-texte-2">{g.label}</h2>
           {g.items.map((m) => (
-            <MessageItem key={m.id} message={m} viewer={viewer} otherName={otherName} otherLabel={otherLabel} />
+            <MessageItem key={m.id} message={m} viewer={viewer} otherName={otherName} otherLabel={otherLabel} bilanHref={bilanHref} />
           ))}
         </section>
       ))}
@@ -54,17 +61,50 @@ export function MessageThread({ messages, viewer, otherName, otherLabel, emptyTe
   );
 }
 
-function MessageItem({ message: m, viewer, otherName, otherLabel }: { message: ThreadMessage; viewer: "coach" | "coache"; otherName: string; otherLabel?: string }) {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Lien du bilan de progression lié à un événement, ou null. */
+function bilanLink(m: ThreadMessage, viewer: "coach" | "coache", bilanHref: string | null | undefined): string | null {
+  const p = m.payload;
+  if (!p || typeof p !== "object" || Array.isArray(p) || p.type !== "bilan_progression") return null;
+  if (bilanHref !== undefined) return bilanHref;
+  if (viewer !== "coache") return null;
+  return typeof p.report_id === "string" && UUID.test(p.report_id) ? `/app/progression/bilans/${p.report_id}` : null;
+}
+
+function MessageItem({
+  message: m,
+  viewer,
+  otherName,
+  otherLabel,
+  bilanHref,
+}: {
+  message: ThreadMessage;
+  viewer: "coach" | "coache";
+  otherName: string;
+  otherLabel?: string;
+  bilanHref?: string | null;
+}) {
   const time = messageTime(m.createdAt);
 
   if (m.kind === "event") {
-    return (
+    const link = bilanLink(m, viewer, bilanHref);
+    const pill = (
       <p className="mx-auto max-w-[90%] rounded-full border border-bordure bg-carte px-3.5 py-1.5 text-center text-legende text-texte-2 tabular-nums">
         {m.body}
         <span className="sr-only">, à </span>
         <span aria-hidden="true"> · </span>
         <time dateTime={m.createdAt}>{time}</time>
       </p>
+    );
+    if (!link) return pill;
+    return (
+      <div className="flex flex-col items-center">
+        {pill}
+        <Link href={link} className="inline-flex min-h-11 items-center rounded-full px-3 text-[15px] font-semibold text-olive-fonce hover:underline">
+          Voir le bilan
+        </Link>
+      </div>
     );
   }
 

@@ -148,6 +148,12 @@ async function Fiche({ params }: Props) {
             {file.weightKg != null && <Fact label="Poids" value={`${fmtKg(file.weightKg)} kg`} />}
           </dl>
           <Link
+            href={`/coach/bilans-progression/${file.id}`}
+            className="liste-groupee flex min-h-11 items-center justify-between px-4 py-3 font-semibold text-olive-fonce hover:bg-fond"
+          >
+            Bilan de progression <span aria-hidden>›</span>
+          </Link>
+          <Link
             href={`/coach/coaches/${file.id}/nutrition`}
             className="liste-groupee flex min-h-11 items-center justify-between px-4 py-3 font-semibold text-olive-fonce hover:bg-fond"
           >

@@ -6,6 +6,8 @@ import { ChargeChart } from "@/components/progression/ChargeChart";
 import { IconProgression, IconSeance } from "@/components/icons";
 import { attendance, currentStreak, kgLabel, kgNumber, pickReference, records, shortDate, todayParis, weeklyLoads } from "@/lib/progression/compute";
 import { getProgression } from "@/lib/progression/data";
+import { listMyReports } from "@/lib/bilans-progression/coache/data";
+import { MyReports, NewReportCard } from "@/components/bilans-progression/coache/ReportsOverview";
 
 export const metadata: Metadata = { title: "Ma progression" };
 
@@ -48,19 +50,25 @@ export default function Page() {
 }
 
 async function ProgressionContent() {
-  const data = await getProgression();
+  const [data, bilans] = await Promise.all([getProgression(), listMyReports()]);
+  const reports = bilans.state === "ok" ? bilans.reports : [];
   const header = (
-    <header>
-      <p className="text-[15px] font-medium text-texte-2">Tes charges, ta régularité, tes records</p>
-      <h1 className="text-titre">Ma progression</h1>
-    </header>
+    <div>
+      <header>
+        <p className="text-[15px] font-medium text-texte-2">Tes charges, ta régularité, tes records</p>
+        <h1 className="text-titre">Ma progression</h1>
+      </header>
+      {bilans.state === "ok" && <NewReportCard reports={reports} coachFirstName={bilans.coachFirstName} />}
+    </div>
   );
+  const mesBilans = <MyReports reports={reports} unavailable={bilans.state !== "ok"} />;
 
   if (data.state !== "ok") {
     return (
       <section className="flex flex-col gap-6">
         {header}
         <Empty title="Progression indisponible">Impossible de charger tes données pour le moment. Réessaie dans quelques instants.</Empty>
+        <div className="-mt-6">{mesBilans}</div>
       </section>
     );
   }
@@ -84,6 +92,7 @@ async function ProgressionContent() {
         >
           Termine ta première séance et envoie ton retour à {coachFirstName} : ta courbe de charge, ton assiduité et tes records apparaîtront ici.
         </Empty>
+        <div className="-mt-6">{mesBilans}</div>
       </section>
     );
   }
@@ -188,6 +197,9 @@ async function ProgressionContent() {
       ) : (
         <Empty title="Pas encore de record">Tes records apparaîtront dès qu’une série chargée sera cochée dans une séance terminée.</Empty>
       )}
+
+      {/* Bilans de progression envoyés par le coach */}
+      {mesBilans}
     </section>
   );
 }

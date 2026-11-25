@@ -71,6 +71,7 @@ async function Conversation({ params }: Props) {
             messages={messages}
             viewer="coach"
             otherName={name}
+            bilanHref={`/coach/bilans-progression/${peer.clientId}`}
             emptyText={`Écris ton premier message à ${name}. Ses retours de séance et tes ajustements s’afficheront aussi ici.`}
           />
         ) : (

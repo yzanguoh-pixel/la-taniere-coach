@@ -900,6 +900,63 @@ export type Database = {
           },
         ]
       }
+      progress_reports: {
+        Row: {
+          client_id: string
+          coach_id: string
+          coach_note: string | null
+          created_at: string
+          data: Json
+          id: string
+          period_end: string
+          period_start: string
+          read_at: string | null
+          sent_at: string
+          title: string
+        }
+        Insert: {
+          client_id: string
+          coach_id: string
+          coach_note?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          period_end: string
+          period_start: string
+          read_at?: string | null
+          sent_at?: string
+          title: string
+        }
+        Update: {
+          client_id?: string
+          coach_id?: string
+          coach_note?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          period_end?: string
+          period_start?: string
+          read_at?: string | null
+          sent_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_reports_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       program_templates: {
         Row: {
           coach_id: string
