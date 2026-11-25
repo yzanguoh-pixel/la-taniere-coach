@@ -84,3 +84,12 @@ export const fmtTime = (d: string | Date) => new Intl.DateTimeFormat("fr-FR", { 
 export const fmtDayShort = (d: string | Date) => new Intl.DateTimeFormat("fr-FR", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" }).format(new Date(d));
 
 export const formatLabel: Record<string, string> = { visio: "Visio", salle: "En salle", les_deux: "Visio ou salle" };
+
+/** Durée d'une séance encadrée à la salle. */
+export const SESSION_MINUTES = 60;
+
+/** Fin d'une séance encadrée (début + 1 h). */
+export const sessionEnd = (startsAt: string) => new Date(new Date(startsAt).getTime() + SESSION_MINUTES * 60_000).toISOString();
+
+/** « lun. » à partir d'une date AAAA-MM-JJ. */
+export const fmtWeekday = (iso: string) => new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC", weekday: "short" }).format(new Date(`${iso}T12:00:00Z`));

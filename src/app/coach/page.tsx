@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { coachSupabase } from "@/lib/coach/supabase";
-import { countActiveClients, getOpenFeedbacks, getUpcomingSessions } from "@/lib/coach/queries";
+import { countActiveClients, getCoachedToday, getOpenFeedbacks, getUpcomingSessions, type CoachedToday } from "@/lib/coach/queries";
+import { sessionHour } from "@/components/seances/ModeBadge";
 import { fmtLongToday, plural } from "@/lib/coach/format";
 import { FeedbackQueue } from "@/components/coach/FeedbackQueue";
 import { UpcomingSessions } from "@/components/coach/UpcomingSessions";
@@ -30,10 +32,16 @@ async function Dashboard() {
       </>
     );
   }
-  const [queue, upcoming, actifs] = await Promise.all([getOpenFeedbacks(supabase), getUpcomingSessions(supabase), countActiveClients(supabase)]);
+  const [queue, upcoming, actifs, atGym] = await Promise.all([
+    getOpenFeedbacks(supabase),
+    getUpcomingSessions(supabase),
+    countActiveClients(supabase),
+    getCoachedToday(supabase).catch(() => null),
+  ]);
   return (
     <>
       <Header subtitle={`${fmtLongToday(now)} · ${plural(actifs, "coaché actif", "coachés actifs")}`} />
+      {atGym && <TodayAtGym items={atGym} />}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <FeedbackQueue items={queue} now={now} />
         <aside aria-label="À venir" className="flex flex-col gap-6">
@@ -41,6 +49,24 @@ async function Dashboard() {
         </aside>
       </div>
     </>
+  );
+}
+
+/** Ligne « Aujourd’hui à la salle : 17:00 Léa · … » (séances encadrées du jour). */
+function TodayAtGym({ items }: { items: CoachedToday[] }) {
+  if (!items.length) return <p className="-mt-3 text-[15px] text-texte-2 md:-mt-5">Aucune séance encadrée aujourd’hui</p>;
+  return (
+    <p className="-mt-3 text-[15px] md:-mt-5">
+      <span className="text-texte-2">Aujourd’hui à la salle : </span>
+      {items.map((s, i) => (
+        <span key={s.sessionId}>
+          {i > 0 && <span className="text-texte-2"> · </span>}
+          <Link href={`/coach/coaches/${s.clientId}`} className="inline-block whitespace-nowrap font-semibold text-olive-fonce hover:underline">
+            <span className="tabular-nums">{sessionHour(s.startsAt) || "—"}</span> {s.firstName}
+          </Link>
+        </span>
+      ))}
+    </p>
   );
 }
 

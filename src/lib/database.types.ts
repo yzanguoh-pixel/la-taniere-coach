@@ -279,7 +279,9 @@ export type Database = {
           done_at: string | null
           id: string
           label: string
+          mode: string
           name: string
+          starts_at: string | null
           status: string
           week: number
         }
@@ -290,7 +292,9 @@ export type Database = {
           date: string
           done_at?: string | null
           id?: string
+          mode?: string
           label: string
+          starts_at?: string | null
           name: string
           status?: string
           week?: number
@@ -302,7 +306,9 @@ export type Database = {
           date?: string
           done_at?: string | null
           id?: string
+          mode?: string
           label?: string
+          starts_at?: string | null
           name?: string
           status?: string
           week?: number
@@ -1192,6 +1198,7 @@ export type Database = {
       subscriptions: {
         Row: {
           client_id: string
+          coached_per_week: number
           created_at: string
           id: string
           period: string
@@ -1202,6 +1209,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          coached_per_week?: number
           client_id: string
           created_at?: string
           id?: string
@@ -1213,6 +1221,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          coached_per_week?: number
           client_id?: string
           created_at?: string
           id?: string

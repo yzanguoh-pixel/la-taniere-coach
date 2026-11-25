@@ -1,6 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { todayIso } from "./format";
+import { todayIso, weekBounds } from "./format";
 
 /** Lectures de l'espace coaché. La RLS garantit que Léa ne lit que ses propres lignes. */
 
@@ -34,6 +34,10 @@ export type SessionDetail = {
   date: string;
   status: "planned" | "done" | "skipped";
   done_at: string | null;
+  /** « presentiel » (encadrée par le coach, à la salle) ou « solo » (en autonomie). */
+  mode: "presentiel" | "solo";
+  /** Heure du rendez-vous (présentiel uniquement). */
+  starts_at: string | null;
   programName: string;
   adaptations: string[];
   exercises: SessionExercise[];
@@ -77,7 +81,7 @@ export async function getMe(): Promise<Me | null> {
   };
 }
 
-const SESSION_SELECT = `id, label, name, week, date, status, done_at,
+const SESSION_SELECT = `id, label, name, week, date, status, done_at, mode, starts_at,
   client_programs ( name, adaptations ),
   session_exercises ( id, position, consigne, rest_s, exercises ( name_fr, category, equipment ),
     sets ( id, set_number, target_reps, target_load_kg, target_rpe, reps, load_kg, done ) ),
@@ -91,6 +95,8 @@ type RawSession = {
   date: string;
   status: SessionDetail["status"];
   done_at: string | null;
+  mode: string | null;
+  starts_at: string | null;
   client_programs: { name: string; adaptations: unknown } | null;
   session_exercises: {
     id: string;
@@ -128,6 +134,8 @@ function toDetail(raw: RawSession): SessionDetail {
     date: raw.date,
     status: raw.status,
     done_at: raw.done_at,
+    mode: raw.mode === "presentiel" ? "presentiel" : "solo",
+    starts_at: raw.mode === "presentiel" ? raw.starts_at : null,
     programName: raw.client_programs?.name ?? "",
     adaptations,
     exercises,
@@ -183,4 +191,39 @@ export async function getCurrentLoad(clientId: string, exerciseName: string): Pr
     .limit(1)
     .maybeSingle();
   return data ? num((data as { target_load_kg: unknown }).target_load_kg) : null;
+}
+
+export type WeekSession = {
+  id: string;
+  label: string;
+  name: string;
+  date: string;
+  status: SessionDetail["status"];
+  mode: SessionDetail["mode"];
+  starts_at: string | null;
+};
+
+/** Séances de la semaine en cours (lundi → dimanche, heure de Paris), programme actif. */
+export async function getWeekSessions(clientId: string, today: string = todayIso()): Promise<WeekSession[]> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return [];
+  const { start, end } = weekBounds(today);
+  const { data } = await supabase
+    .from("client_sessions")
+    .select("id, label, name, date, status, mode, starts_at, client_programs!inner ( active )")
+    .eq("client_id", clientId)
+    .eq("client_programs.active", true)
+    .gte("date", start)
+    .lte("date", end)
+    .order("date", { ascending: true })
+    .order("label", { ascending: true });
+  return ((data ?? []) as unknown as (Omit<WeekSession, "mode"> & { mode: string | null })[]).map((s) => ({
+    id: s.id,
+    label: s.label,
+    name: s.name,
+    date: s.date,
+    status: s.status,
+    mode: s.mode === "presentiel" ? "presentiel" : "solo",
+    starts_at: s.mode === "presentiel" ? s.starts_at : null,
+  }));
 }

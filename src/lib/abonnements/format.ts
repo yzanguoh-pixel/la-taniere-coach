@@ -124,3 +124,25 @@ export function reminderBody(planName: string, renewsOn: string, today: string, 
   parts.push(p.due ? `${p.done} séance${p.done > 1 ? "s" : ""} faite${p.done > 1 ? "s" : ""} sur ${p.due} prévue${p.due > 1 ? "s" : ""} depuis le ${since}` : `aucune séance prévue depuis le ${since}`);
   return `${head} Ton bilan : ${parts.join(" ; ")}.`;
 }
+
+/**
+ * Formule expliquée à partir des séances encadrées incluses (subscriptions.coached_per_week)
+ * et du rythme total du coaché (clients.sessions_per_week) ; la différence se fait en autonomie.
+ * « 2 séances encadrées par semaine + 1 en autonomie, suivi à distance ».
+ */
+export function formulaDetail(coachedPerWeek: number, sessionsPerWeek: number | null | undefined): string {
+  const coached = Math.max(0, coachedPerWeek);
+  const solo = sessionsPerWeek != null ? Math.max(0, sessionsPerWeek - coached) : 0;
+  const base = `${coached} séance${coached > 1 ? "s" : ""} encadrée${coached > 1 ? "s" : ""} par semaine`;
+  return `${base}${solo ? ` + ${solo} en autonomie` : ""}, suivi à distance`;
+}
+
+/** « Suivi premium · 2 séances encadrées par semaine + 1 en autonomie, suivi à distance ». */
+export function formulaSentence(planName: string, coachedPerWeek: number, sessionsPerWeek: number | null | undefined): string {
+  return `${planName} · ${formulaDetail(coachedPerWeek, sessionsPerWeek)}`;
+}
+
+/** Version courte pour les listes : « 2 encadrées / sem. ». */
+export function formulaShort(coachedPerWeek: number): string {
+  return `${coachedPerWeek} encadrée${coachedPerWeek > 1 ? "s" : ""} / sem.`;
+}

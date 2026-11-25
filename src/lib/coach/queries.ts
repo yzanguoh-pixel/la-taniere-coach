@@ -85,7 +85,18 @@ export async function countActiveClients(supabase: Supabase): Promise<number> {
 
 export type SetRow = { id: string; set_number: number; target_reps: number | null; target_load_kg: number | null; reps: number | null; load_kg: number | null; done: boolean };
 export type SessionExerciseRow = { id: string; exercise_id: string; position: number; name: string; sets: SetRow[] };
-export type SessionBlock = { id: string; label: string; name: string; week: number; date: string; status: string; exercises: SessionExerciseRow[] };
+export type SessionBlock = {
+  id: string;
+  label: string;
+  name: string;
+  week: number;
+  date: string;
+  status: string;
+  /** « presentiel » (encadrée, à la salle) ou « solo » (en autonomie). */
+  mode: "presentiel" | "solo";
+  starts_at: string | null;
+  exercises: SessionExerciseRow[];
+};
 
 export type FeedbackDetail = {
   id: string;
@@ -118,6 +129,10 @@ export type ClientFile = {
   openFeedbackId: string | null;
   recent: SessionBlock[];
   adjustable: AdjustableExercise[];
+  /** Formule en cours (abonnement non résilié le plus récent). */
+  formula: { planName: string; coachedPerWeek: number } | null;
+  /** Prochaine séance encadrée planifiée (à partir d'aujourd'hui). */
+  nextCoached: { date: string; startsAt: string | null } | null;
 };
 
 const num = (v: unknown): number | null => (v == null ? null : Number(v));
@@ -129,6 +144,8 @@ type RawSession = {
   week: number;
   date: string;
   status: string;
+  mode: string | null;
+  starts_at: string | null;
   session_exercises: {
     id: string;
     exercise_id: string;
@@ -139,7 +156,7 @@ type RawSession = {
 };
 
 const SESSION_SELECT =
-  "id, label, name, week, date, status, session_exercises(id, exercise_id, position, exercises(name_fr), sets(id, set_number, target_reps, target_load_kg, reps, load_kg, done))";
+  "id, label, name, week, date, status, mode, starts_at, session_exercises(id, exercise_id, position, exercises(name_fr), sets(id, set_number, target_reps, target_load_kg, reps, load_kg, done))";
 
 function toBlock(s: RawSession): SessionBlock {
   return {
@@ -149,6 +166,8 @@ function toBlock(s: RawSession): SessionBlock {
     week: s.week,
     date: s.date,
     status: s.status,
+    mode: s.mode === "presentiel" ? "presentiel" : "solo",
+    starts_at: s.mode === "presentiel" ? s.starts_at : null,
     exercises: [...(s.session_exercises ?? [])]
       .sort((a, b) => a.position - b.position)
       .map((x) => ({
@@ -202,7 +221,7 @@ export async function getClientFile(supabase: Supabase, clientId: string): Promi
   const profile = one(c.profiles as unknown as ProfileName | ProfileName[] | null);
 
   const today = todayIso();
-  const [programRes, feedbackRes, openRes] = await Promise.all([
+  const [programRes, feedbackRes, openRes, subRes, coachedRes] = await Promise.all([
     supabase.from("client_programs").select("id, name, adaptations").eq("client_id", clientId).eq("active", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase
       .from("session_feedback")
@@ -212,6 +231,18 @@ export async function getClientFile(supabase: Supabase, clientId: string): Promi
       .limit(1)
       .maybeSingle(),
     supabase.from("session_feedback").select("id").eq("client_id", clientId).is("handled_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("subscriptions").select("plan_name, coached_per_week").eq("client_id", clientId).neq("status", "resilie").order("starts_on", { ascending: false }).limit(1).maybeSingle(),
+    supabase
+      .from("client_sessions")
+      .select("date, starts_at")
+      .eq("client_id", clientId)
+      .eq("mode", "presentiel")
+      .eq("status", "planned")
+      .gte("date", today)
+      .order("date", { ascending: true })
+      .order("starts_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
   ]);
   const program = programRes.data
     ? { id: programRes.data.id as string, name: programRes.data.name as string, adaptations: (programRes.data.adaptations as string[] | null) ?? [] }
@@ -265,6 +296,8 @@ export async function getClientFile(supabase: Supabase, clientId: string): Promi
     openFeedbackId: (openRes.data?.id as string | undefined) ?? null,
     recent,
     adjustable,
+    formula: subRes.data ? { planName: subRes.data.plan_name, coachedPerWeek: subRes.data.coached_per_week ?? 1 } : null,
+    nextCoached: coachedRes.data ? { date: coachedRes.data.date, startsAt: coachedRes.data.starts_at } : null,
   };
 }
 
@@ -281,4 +314,49 @@ export async function getFutureSessions(supabase: Supabase, clientId: string): P
     .order("date", { ascending: true });
   if (error) throw new Error(error.message);
   return { programId: program.id as string, future: ((data ?? []) as unknown as RawSession[]).map(toBlock) };
+}
+
+// ------------------------------------------------------------------ formules et séances encadrées
+
+export type ClientFormula = { planName: string; coachedPerWeek: number; sessionsPerWeek: number | null };
+
+/** Formule en cours de chaque coaché visible (abonnement non résilié le plus récent), par id de coaché. */
+export async function getFormulas(supabase: Supabase): Promise<Map<string, ClientFormula>> {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("client_id, plan_name, coached_per_week, starts_on, clients(sessions_per_week)")
+    .neq("status", "resilie")
+    .order("starts_on", { ascending: false });
+  if (error) throw new Error("Impossible de charger les formules : " + error.message);
+  const out = new Map<string, ClientFormula>();
+  for (const r of data ?? []) {
+    if (out.has(r.client_id)) continue;
+    const c = one(r.clients as unknown as { sessions_per_week: number | null } | null);
+    out.set(r.client_id, { planName: r.plan_name, coachedPerWeek: r.coached_per_week ?? 1, sessionsPerWeek: c?.sessions_per_week ?? null });
+  }
+  return out;
+}
+
+export type CoachedToday = { sessionId: string; clientId: string; firstName: string; startsAt: string | null; status: string };
+
+/** Séances encadrées (présentiel) du jour, par heure de rendez-vous ; les séances annulées sont exclues. */
+export async function getCoachedToday(supabase: Supabase, today = todayIso()): Promise<CoachedToday[]> {
+  const { data, error } = await supabase
+    .from("client_sessions")
+    .select("id, client_id, starts_at, status, clients(profiles!clients_profile_id_fkey(full_name, initials))")
+    .eq("date", today)
+    .eq("mode", "presentiel")
+    .neq("status", "skipped")
+    .order("starts_at", { ascending: true, nullsFirst: false });
+  if (error) throw new Error("Impossible de charger les séances du jour : " + error.message);
+  return (data ?? []).map((r) => {
+    const profile = one(one(r.clients as unknown as { profiles: ProfileName | ProfileName[] } | null)?.profiles);
+    return {
+      sessionId: r.id,
+      clientId: r.client_id,
+      firstName: (profile?.full_name ?? "Coaché").split(" ")[0],
+      startsAt: r.starts_at,
+      status: r.status,
+    };
+  });
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { InvoiceList, type InvoiceItem } from "@/components/abonnements/InvoiceList";
 import { SubscriptionBoard, type BoardRow } from "@/components/abonnements/SubscriptionBoard";
-import { asPeriod, daysBetween, dueLabel, effectiveStatus, periodLabel, priceLabel, REMINDER_DAYS, shortDay } from "@/lib/abonnements/format";
+import { asPeriod, daysBetween, dueLabel, effectiveStatus, formulaDetail, periodLabel, priceLabel, REMINDER_DAYS, shortDay } from "@/lib/abonnements/format";
 import { abonnementsSupabase, getPricePlaceholder, lastReminders, listInvoices, listSubscriptions } from "@/lib/abonnements/queries";
 import { todayParis } from "@/lib/progression/compute";
 
@@ -41,6 +41,7 @@ async function Content() {
           fullName: s.fullName,
           initials: s.initials,
           planName: s.planName,
+          formulaLabel: formulaDetail(s.coachedPerWeek, s.sessionsPerWeek),
           periodLabel: periodLabel[asPeriod(s.period)],
           priceLabel: priceLabel(s.priceEur, placeholder),
           renewsOn: s.renewsOn,

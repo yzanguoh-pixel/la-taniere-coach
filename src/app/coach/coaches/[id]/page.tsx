@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { coachSupabase } from "@/lib/coach/supabase";
 import { getClientFile, type ClientFile } from "@/lib/coach/queries";
-import { feelingLabel, firstName, fmtDateTime, fmtKg, relativeTime, urgencyOf } from "@/lib/coach/format";
+import { feelingLabel, firstName, fmtDateTime, fmtDay, fmtKg, relativeTime, todayIso, urgencyOf } from "@/lib/coach/format";
+import { formulaSentence } from "@/lib/abonnements/format";
+import { sessionHour } from "@/components/seances/ModeBadge";
 import { listThread } from "@/lib/messages/thread";
 import { ActivitiesCard } from "@/components/connexions/ActivitiesCard";
 import { AdjustLoad } from "@/components/coach/AdjustLoad";
@@ -63,6 +65,9 @@ async function Fiche({ params }: Props) {
   const name = firstName(file.fullName);
   const fb = file.lastFeedback;
   const goals = targetsText(file.targets);
+  const nextCoached = file.nextCoached
+    ? [file.nextCoached.date === todayIso(now) ? "aujourd’hui" : fmtDay(file.nextCoached.date), sessionHour(file.nextCoached.startsAt)].filter(Boolean).join(" · ")
+    : null;
 
   return (
     <article className="flex flex-col gap-8">
@@ -75,6 +80,16 @@ async function Fiche({ params }: Props) {
           <div className="min-w-0">
             <h1 className="text-titre break-words">{file.fullName}</h1>
             <p className="mt-1 text-texte-2">{file.program ? `Programme « ${file.program.name} »` : "Aucun programme actif"}</p>
+            <p className="mt-0.5 text-[15px] tabular-nums">
+              {nextCoached ? (
+                <>
+                  <span className="text-texte-2">Prochaine séance encadrée : </span>
+                  <strong className="font-semibold text-olive-fonce">{nextCoached}</strong>
+                </>
+              ) : (
+                <span className="text-texte-2">Aucune séance encadrée planifiée</span>
+              )}
+            </p>
           </div>
         </header>
         {file.program && file.program.adaptations.length > 0 && (
@@ -127,6 +142,7 @@ async function Fiche({ params }: Props) {
             <Fact label="Objectif" value={file.goal ?? "Non renseigné"} />
             {goals.length > 0 && <Fact label="Cible" value={goals.join(" · ")} />}
             <Fact label="Blessures" value={file.injuries?.trim() || "Aucune signalée"} tone={file.injuries?.trim() ? "alerte" : undefined} />
+            {file.formula && <Fact label="Formule" value={formulaSentence(file.formula.planName, file.formula.coachedPerWeek, file.sessionsPerWeek)} />}
             {file.level && <Fact label="Niveau" value={levelLabel[file.level] ?? file.level} />}
             {file.sessionsPerWeek != null && <Fact label="Rythme" value={`${file.sessionsPerWeek} séance${file.sessionsPerWeek > 1 ? "s" : ""} par semaine`} />}
             {file.weightKg != null && <Fact label="Poids" value={`${fmtKg(file.weightKg)} kg`} />}

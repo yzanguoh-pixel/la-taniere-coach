@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { IconChevron, IconNutrition, IconProgression, IconSeance } from "@/components/icons";
-import { getCurrentLoad, getMe, getNextSession } from "@/lib/coache/data";
-import { dayLabel, estimateMinutes, formatKg, keyLoad, longDate, sessionTitle, todayIso, toNumber } from "@/lib/coache/format";
+import { ModeBadge, sessionHour } from "@/components/seances/ModeBadge";
+import { getCurrentLoad, getMe, getNextSession, getWeekSessions, type WeekSession } from "@/lib/coache/data";
+import { dayLabel, estimateMinutes, formatKg, keyLoad, longDate, sessionTitle, shortWeekday, todayIso, toNumber } from "@/lib/coache/format";
 
 export const metadata: Metadata = { title: "Aujourd’hui" };
 
@@ -50,7 +51,7 @@ async function Today({ searchParams }: { searchParams: SearchParams }) {
     );
   }
 
-  const next = await getNextSession(me.clientId);
+  const [next, week] = await Promise.all([getNextSession(me.clientId), getWeekSessions(me.clientId, today)]);
   const squatTarget = toNumber(me.targets.squat_kg as number | string | undefined);
   const squatNow = squatTarget != null ? await getCurrentLoad(me.clientId, "Squat barre") : null;
 
@@ -67,7 +68,9 @@ async function Today({ searchParams }: { searchParams: SearchParams }) {
         </p>
       )}
 
-      {next ? <NextSessionCard session={next} today={today} /> : <NoSessionCard coach={me.coachFirstName} />}
+      {next ? <NextSessionCard session={next} today={today} coach={me.coachFirstName} /> : <NoSessionCard coach={me.coachFirstName} />}
+
+      {week.length > 0 && <WeekList sessions={week} today={today} />}
 
       <nav aria-label="Raccourcis" className="grid grid-cols-2 gap-3">
         <Link href="/app/nutrition" className="flex min-h-36 flex-col gap-2 rounded-[20px] bg-carte p-4 shadow-legere transition-colors hover:bg-olive-pale/40">
@@ -108,11 +111,16 @@ async function Today({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-function NextSessionCard({ session, today }: { session: NonNullable<Awaited<ReturnType<typeof getNextSession>>>; today: string }) {
+function NextSessionCard({ session, today, coach }: { session: NonNullable<Awaited<ReturnType<typeof getNextSession>>>; today: string; coach: string }) {
   const n = session.exercises.length;
   const minutes = estimateMinutes(session.exercises);
   const key = keyLoad(session.exercises);
   const isToday = session.date === today;
+  const hour = sessionHour(session.starts_at);
+  const modeLine =
+    session.mode === "presentiel"
+      ? `${coach} t’attend à la salle${hour ? ` à ${hour}` : ""}.`
+      : `Séance en autonomie : note tes séries, ${coach} suit ton retour à distance.`;
   return (
     <section aria-labelledby="next-title" className="flex flex-col gap-4 rounded-[24px] bg-olive p-5 text-texte">
       <p className="flex items-center gap-2 text-legende font-semibold uppercase tracking-[0.04em]">
@@ -127,6 +135,10 @@ function NextSessionCard({ session, today }: { session: NonNullable<Awaited<Retu
           {dayLabel(session.date, today)}
           {session.programName ? ` · ${session.programName}` : ""}
         </p>
+      </div>
+      <div className="flex flex-col items-start gap-2">
+        <ModeBadge mode={session.mode} startsAt={session.starts_at} coach={coach} />
+        <p className="text-[15px] font-medium">{modeLine}</p>
       </div>
       <dl className="grid grid-cols-3 overflow-hidden rounded-[16px] bg-carte/40">
         <div className="flex flex-col-reverse gap-0.5 p-3">
@@ -148,6 +160,37 @@ function NextSessionCard({ session, today }: { session: NonNullable<Awaited<Retu
         Voir ma séance
         <IconChevron width={18} height={18} />
       </Link>
+    </section>
+  );
+}
+
+/** Séances de la semaine en cours, avec le mode (présentiel ou solo). */
+function WeekList({ sessions, today }: { sessions: WeekSession[]; today: string }) {
+  return (
+    <section aria-labelledby="week-title" className="flex flex-col gap-2">
+      <h2 id="week-title" className="mx-1 text-legende font-bold uppercase tracking-[0.04em] text-texte-2">
+        Cette semaine
+      </h2>
+      <ul className="liste-groupee">
+        {sessions.map((s) => (
+          <li key={s.id}>
+            <Link href={`/app/seance/${s.id}`} className="flex min-h-11 items-center gap-3 px-4 py-3 transition-colors hover:bg-fond">
+              <span className={`w-14 shrink-0 text-legende tabular-nums ${s.date === today ? "font-semibold text-olive-fonce" : "text-texte-2"}`}>
+                {s.date === today ? "Auj." : shortWeekday(s.date)}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate font-semibold">Séance {s.label}</span>
+                <span className="truncate text-legende text-texte-2">
+                  {s.name}
+                  {s.status === "done" ? " · faite" : s.status === "skipped" ? " · non faite" : ""}
+                </span>
+              </span>
+              <ModeBadge mode={s.mode} startsAt={s.starts_at} compact />
+              <IconChevron width={18} height={18} className="shrink-0 text-icone" />
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

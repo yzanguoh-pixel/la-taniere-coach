@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useId, useMemo, useRef, useState } from "react";
+import { useActionState, useId, useMemo, useState } from "react";
 import { personnaliserModele, type PersonnaliserState } from "@/app/coach/modeles/actions";
+import { Sheet, SheetBody, SheetFooter, SheetHeader } from "@/components/ui/Sheet";
 
 /** Données sérialisées par la page serveur (voir getTemplates / getClientChoices). */
 export type CatalogTemplate = {
@@ -28,15 +29,12 @@ export function TemplateCatalog({ templates, clients }: { templates: CatalogTemp
   const [goal, setGoal] = useState<string | null>(null);
   const [level, setLevel] = useState<string | null>(null);
   const [target, setTarget] = useState<CatalogTemplate | null>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const goals = useMemo(() => [...new Set(templates.map((t) => t.goal))].sort((a, b) => a.localeCompare(b, "fr")), [templates]);
   const list = templates.filter((t) => (goal == null || t.goal === goal) && (level == null || t.level === level));
 
-  const open = (t: CatalogTemplate) => {
-    setTarget(t);
-    dialogRef.current?.showModal();
-  };
+  const open = (t: CatalogTemplate) => setTarget(t);
+  const close = () => setTarget(null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -95,19 +93,20 @@ export function TemplateCatalog({ templates, clients }: { templates: CatalogTemp
         </ul>
       )}
 
-      <dialog
-        ref={dialogRef}
-        aria-labelledby="perso-title"
-        onClose={() => setTarget(null)}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) e.currentTarget.close();
-        }}
-        className="m-auto w-[min(92vw,520px)] rounded-[24px] bg-carte p-0 text-texte shadow-flottante backdrop:bg-texte/40"
-      >
-        {target && <PersonnaliserForm key={target.id} template={target} clients={clients} onCancel={() => dialogRef.current?.close()} />}
-      </dialog>
+      <Sheet open={target != null} onClose={close} labelledBy="perso-title">
+        {target && <PersonnaliserForm key={target.id} template={target} clients={clients} onCancel={close} />}
+      </Sheet>
     </div>
   );
+}
+
+/** Résumé d'une ligne : objectif (avant la première virgule) · programme en cours. */
+function clientSummary(c: CatalogClient) {
+  const goal = c.goal?.split(/[,;]/)[0]?.trim() || "Objectif à préciser";
+  return c.program ? `${goal} · ${c.program}` : goal;
+}
+function clientDetail(c: CatalogClient) {
+  return `${c.goal ?? "Objectif à préciser"}${c.program ? ` · en cours : ${c.program}` : ""}`;
 }
 
 function PersonnaliserForm({ template, clients, onCancel }: { template: CatalogTemplate; clients: CatalogClient[]; onCancel: () => void }) {
@@ -115,70 +114,71 @@ function PersonnaliserForm({ template, clients, onCancel }: { template: CatalogT
   const [state, action, pending] = useActionState<PersonnaliserState, FormData>(personnaliserModele, {});
   const mine = state.templateId === template.id ? state : {};
   const errId = `${uid}-err`;
+  const hintId = `${uid}-hint`;
+  const legendId = `${uid}-legend`;
 
   return (
-    <form action={action} className="flex max-h-[85dvh] flex-col gap-4 p-6" noValidate>
-      <input type="hidden" name="templateId" value={template.id} />
-      <div className="flex items-start justify-between gap-3">
-        <h2 id="perso-title" className="text-sous-titre">
-          Personnaliser « {template.name} »
-        </h2>
-        <button type="button" onClick={onCancel} aria-label="Fermer" className="-mr-2 -mt-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-icone hover:bg-separateur">
-          <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <path d="M6 6l12 12M18 6 6 18" />
-          </svg>
-        </button>
-      </div>
+    <>
+      <SheetHeader id="perso-title" title={<>Personnaliser « {template.name} »</>} onClose={onCancel} />
+      <form action={action} className="flex min-h-0 min-w-0 flex-1 flex-col" noValidate>
+        <input type="hidden" name="templateId" value={template.id} />
+        <SheetBody className="flex flex-col gap-3">
+          {mine.error && (
+            <p role="alert" className="rounded-2xl bg-peche px-4 py-3 text-peche-fonce">
+              {mine.error}
+            </p>
+          )}
 
-      {mine.error && (
-        <p role="alert" className="rounded-2xl bg-peche px-4 py-3 text-peche-fonce">
-          {mine.error}
-        </p>
-      )}
-
-      <fieldset className="flex min-h-0 flex-col gap-2" aria-describedby={mine.fieldError ? errId : `${uid}-hint`} aria-invalid={mine.fieldError ? true : undefined}>
-        <legend className="mb-2 font-semibold">Coaché</legend>
-        {clients.length === 0 ? (
-          <p className="text-texte-2">Aucun coaché actif pour le moment.</p>
-        ) : (
-          <div className="liste-groupee min-h-0 overflow-y-auto">
-            {clients.map((c) => (
-              <label key={c.id} className="flex min-h-11 cursor-pointer items-center gap-3 px-4 py-3 has-[:checked]:bg-olive-pale">
-                <input type="radio" name="clientId" value={c.id} required className="size-5 accent-olive-fonce" />
-                <span aria-hidden className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-olive-pale text-legende font-semibold text-olive-fonce">
-                  {c.initials}
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-semibold">{c.fullName}</span>
-                  <span className="block truncate text-legende text-texte-2">
-                    {c.goal ?? "Objectif à préciser"}
-                    {c.program ? ` · en cours : ${c.program}` : ""}
+          {/* div role="radiogroup" plutôt que <fieldset> : un fieldset garde une largeur minimale = contenu
+              (min-inline-size: min-content), ce qui empêchait la troncature et faisait déborder la fenêtre. */}
+          <p id={legendId} className="font-semibold">
+            Choisissez le coaché
+          </p>
+          {clients.length === 0 ? (
+            <p className="text-texte-2">Aucun coaché actif pour le moment.</p>
+          ) : (
+            <div
+              role="radiogroup"
+              aria-labelledby={legendId}
+              aria-describedby={mine.fieldError ? errId : hintId}
+              aria-invalid={mine.fieldError ? true : undefined}
+              aria-required="true"
+              className="liste-groupee min-w-0 shrink-0"
+            >
+              {clients.map((c, i) => (
+                <label key={c.id} title={`${c.fullName} — ${clientDetail(c)}`} className="flex min-h-11 min-w-0 cursor-pointer items-center gap-3 px-4 py-3 has-[:checked]:bg-olive-pale has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-olive-fonce">
+                  <input type="radio" name="clientId" value={c.id} data-autofocus={i === 0 ? "" : undefined} className="size-5 shrink-0 accent-olive-fonce focus-visible:outline-none" />
+                  <span aria-hidden className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-olive-pale text-legende font-semibold text-olive-fonce">
+                    {c.initials}
                   </span>
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
-        {mine.fieldError ? (
-          <p id={errId} role="alert" className="text-legende font-medium text-peche-fonce">
-            {mine.fieldError}
-          </p>
-        ) : (
-          <p id={`${uid}-hint`} className="text-legende text-texte-2">
-            Une copie personnalisée est créée pour ce coaché ; le modèle ne change pas. Vous l’ajustez ensuite dans l’éditeur.
-          </p>
-        )}
-      </fieldset>
-
-      <div className="flex flex-wrap justify-end gap-3">
-        <button type="button" className="btn-secondaire" onClick={onCancel}>
-          Annuler
-        </button>
-        <button type="submit" className="btn-principal" disabled={pending || clients.length === 0}>
-          {pending ? "Création de la copie…" : "Créer la copie personnalisée"}
-        </button>
-      </div>
-    </form>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{c.fullName}</span>
+                    <span className="block truncate text-legende text-texte-2">{clientSummary(c)}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {mine.fieldError ? (
+            <p id={errId} role="alert" className="text-legende font-medium text-peche-fonce">
+              {mine.fieldError}
+            </p>
+          ) : (
+            <p id={hintId} className="text-legende text-texte-2">
+              Une copie personnalisée est créée pour ce coaché ; le modèle ne change pas. Vous l’ajustez ensuite dans l’éditeur.
+            </p>
+          )}
+        </SheetBody>
+        <SheetFooter>
+          <button type="button" className="btn-secondaire" onClick={onCancel}>
+            Annuler
+          </button>
+          <button type="submit" className="btn-principal" disabled={pending || clients.length === 0}>
+            {pending ? "Création de la copie…" : "Créer la copie personnalisée"}
+          </button>
+        </SheetFooter>
+      </form>
+    </>
   );
 }
 

@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { IconChevron } from "@/components/icons";
 import { SetRow } from "@/components/coache/SetRow";
-import { getSession } from "@/lib/coache/data";
+import { ModeBadge } from "@/components/seances/ModeBadge";
+import { getMe, getSession } from "@/lib/coache/data";
 import { FEELING_LABELS, dayLabel, estimateMinutes, isTimed, plural, sessionTitle, type Feeling } from "@/lib/coache/format";
 
 export const metadata: Metadata = { title: "Séance" };
@@ -22,7 +23,7 @@ export default function Page({ params }: { params: Params }) {
 
 async function Session({ params }: { params: Params }) {
   const { id } = await params;
-  const s = await getSession(id);
+  const [s, me] = await Promise.all([getSession(id), getMe()]);
   if (!s) notFound();
 
   const sets = s.exercises.flatMap((e) => e.sets);
@@ -43,6 +44,9 @@ async function Session({ params }: { params: Params }) {
           {s.programName} · semaine {s.week} · {dayLabel(s.date)}
         </p>
         <h1 className="text-titre">{sessionTitle(s)}</h1>
+        <div className="mt-1 flex">
+          <ModeBadge mode={s.mode} startsAt={s.starts_at} coach={me?.coachFirstName} />
+        </div>
         <p className="text-texte-2 tabular-nums">
           {plural(s.exercises.length, "exercice")}
           {minutes ? ` · ≈ ${minutes} min` : ""}

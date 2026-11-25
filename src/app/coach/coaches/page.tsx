@@ -3,6 +3,9 @@ import { Suspense } from "react";
 import { ClientDirectory, type DirectoryRow } from "@/components/programmes/library/ClientDirectory";
 import { getClientDirectory, librarySupabase } from "@/lib/programmes/templates";
 import { fmtDay, relativeTime } from "@/lib/coach/format";
+import { formulaShort } from "@/lib/abonnements/format";
+import { coachSupabase } from "@/lib/coach/supabase";
+import { getFormulas } from "@/lib/coach/queries";
 
 export const metadata: Metadata = { title: "Coachés" };
 
@@ -24,17 +27,24 @@ async function Directory() {
   let rows: DirectoryRow[];
   try {
     const now = new Date();
-    rows = (await getClientDirectory(supabase)).map((r) => ({
-      id: r.id,
-      fullName: r.fullName,
-      initials: r.initials,
-      goal: r.goal,
-      archived: r.archived,
-      program: r.program,
-      toRenew: r.toRenew,
-      renewLabel: r.renewsOn ? fmtDay(r.renewsOn) : null,
-      lastFeedback: r.lastFeedback ? { rpe: r.lastFeedback.rpe, when: relativeTime(r.lastFeedback.createdAt, now), handled: r.lastFeedback.handled } : null,
-    }));
+    const coach = await coachSupabase();
+    const [list, formulas] = await Promise.all([getClientDirectory(supabase), coach ? getFormulas(coach).catch(() => null) : null]);
+    rows = list.map((r) => {
+      const f = formulas?.get(r.id);
+      // Sous-titre : objectif, puis la formule en court (« 2 encadrées / sem. »).
+      const goal = [r.goal, f ? formulaShort(f.coachedPerWeek) : null].filter(Boolean).join(" · ") || null;
+      return {
+        id: r.id,
+        fullName: r.fullName,
+        initials: r.initials,
+        goal,
+        archived: r.archived,
+        program: r.program,
+        toRenew: r.toRenew,
+        renewLabel: r.renewsOn ? fmtDay(r.renewsOn) : null,
+        lastFeedback: r.lastFeedback ? { rpe: r.lastFeedback.rpe, when: relativeTime(r.lastFeedback.createdAt, now), handled: r.lastFeedback.handled } : null,
+      };
+    });
   } catch (e) {
     return <Shell sub={null}><Notice title="Impossible de charger les coachés" text={e instanceof Error ? e.message : "Réessayez dans un instant."} /></Shell>;
   }

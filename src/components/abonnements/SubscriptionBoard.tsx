@@ -11,6 +11,8 @@ export type BoardRow = {
   fullName: string;
   initials: string;
   planName: string;
+  /** « 2 séances encadrées par semaine + 1 en autonomie, suivi à distance ». */
+  formulaLabel: string;
   periodLabel: string;
   priceLabel: string;
   renewsOn: string;
@@ -136,6 +138,7 @@ function SubscriptionItem({ row }: { row: BoardRow }) {
             <span className="text-legende tabular-nums text-texte-2">
               {row.planName} · {row.periodLabel} · {row.priceLabel}
             </span>
+            <span className="text-legende text-texte-2">{row.formulaLabel}</span>
           </span>
         </div>
         <div className="flex flex-col gap-0.5 md:items-end">

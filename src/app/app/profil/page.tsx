@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/abonnements/Badges";
 import { InvoiceList } from "@/components/abonnements/InvoiceList";
 import { IconChevron, IconConnexions, IconProfil } from "@/components/icons";
 import { LogoutButton } from "@/components/LogoutButton";
-import { asPeriod, dueLabel, effectiveStatus, longDay, periodLabel, priceLabel, shortDay } from "@/lib/abonnements/format";
+import { asPeriod, dueLabel, effectiveStatus, formulaDetail, longDay, periodLabel, priceLabel, shortDay } from "@/lib/abonnements/format";
 import { getMyProfile } from "@/lib/abonnements/queries";
 import { todayParis } from "@/lib/progression/compute";
 
@@ -83,6 +83,7 @@ async function Content() {
             </span>
             <StatusBadge status={effectiveStatus(sub.status, sub.renewsOn, today)} />
           </div>
+          <p className="border-t border-separateur px-5 py-3 text-[15px]">{formulaDetail(sub.coachedPerWeek, c?.sessionsPerWeek ?? sub.sessionsPerWeek)}.</p>
           <dl className="divide-y divide-separateur border-t border-separateur">
             <Row label="Prochaine échéance">
               {longDay(sub.renewsOn)}

@@ -1,5 +1,6 @@
 import type { SessionBlock, SetRow } from "@/lib/coach/queries";
 import { fmtDay, fmtKg } from "@/lib/coach/format";
+import { ModeBadge } from "@/components/seances/ModeBadge";
 
 /** Résume des séries : « 4 × 6 · 60 kg » si elles sont identiques, sinon série par série. */
 function summarize(sets: SetRow[], kind: "plan" | "done"): string {
@@ -21,8 +22,11 @@ export function PlanVsDone({ sessions }: { sessions: SessionBlock[] }) {
       {sessions.map((s) => (
         <div key={s.id} className="liste-groupee">
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
-            <h3 className="text-[17px] font-semibold">
-              Séance {s.label} · {s.name}
+            <h3 className="flex flex-wrap items-center gap-2 text-[17px] font-semibold">
+              <span>
+                Séance {s.label} · {s.name}
+              </span>
+              <ModeBadge mode={s.mode} startsAt={s.starts_at} compact />
             </h3>
             <span className="text-legende tabular-nums text-texte-2">
               Semaine {s.week} · {fmtDay(s.date)}

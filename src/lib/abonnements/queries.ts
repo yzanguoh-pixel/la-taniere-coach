@@ -24,6 +24,10 @@ export type SubscriptionRow = {
   startsOn: string;
   renewsOn: string;
   status: string;
+  /** Séances encadrées par semaine incluses dans la formule. */
+  coachedPerWeek: number;
+  /** Rythme total du coaché (clients.sessions_per_week) ; la différence se fait en autonomie. */
+  sessionsPerWeek: number | null;
 };
 
 export type InvoiceRow = {
@@ -54,7 +58,7 @@ export async function getPricePlaceholder(supabase: Supabase): Promise<string> {
 export async function listSubscriptions(supabase: Supabase): Promise<SubscriptionRow[]> {
   const { data, error } = await supabase
     .from("subscriptions")
-    .select("id, client_id, plan_name, price_eur, period, starts_on, renews_on, status, clients(profiles!clients_profile_id_fkey(full_name, initials))")
+    .select("id, client_id, plan_name, price_eur, period, starts_on, renews_on, status, coached_per_week, clients(sessions_per_week, profiles!clients_profile_id_fkey(full_name, initials))")
     .order("renews_on", { ascending: true });
   if (error) throw new Error(`Lecture des abonnements impossible : ${error.message}`);
   return (data ?? []).map((s) => ({
@@ -67,6 +71,8 @@ export async function listSubscriptions(supabase: Supabase): Promise<Subscriptio
     startsOn: s.starts_on,
     renewsOn: s.renews_on,
     status: s.status,
+    coachedPerWeek: s.coached_per_week ?? 1,
+    sessionsPerWeek: (s.clients as unknown as { sessions_per_week: number | null } | null)?.sessions_per_week ?? null,
   }));
 }
 

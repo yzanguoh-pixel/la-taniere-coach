@@ -89,7 +89,7 @@ function Header() {
   return (
     <header>
       <h1 className="text-titre">Agenda</h1>
-      <p className="mt-1 text-texte-2">Tes disponibilités, les bilans offerts réservés et les séances de tes coachés.</p>
+      <p className="mt-1 text-texte-2">Tes séances encadrées à la salle, les bilans offerts réservés et tes créneaux libres. Les séances en autonomie sont suivies à distance.</p>
     </header>
   );
 }

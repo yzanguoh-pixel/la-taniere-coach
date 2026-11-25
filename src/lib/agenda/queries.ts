@@ -22,7 +22,19 @@ export type AgendaBooking = {
   intake: IntakeStatus;
   day: string | null;
 };
-export type AgendaSession = { id: string; clientId: string; name: string; label: string; sessionName: string; day: string };
+/** Séance d'un coaché : « presentiel » = encadrée par Karim à la salle (heure fixée, 1 h) ; « solo » = en autonomie, suivie à distance. */
+export type AgendaSession = {
+  id: string;
+  clientId: string;
+  name: string;
+  firstName: string;
+  label: string;
+  sessionName: string;
+  day: string;
+  mode: "presentiel" | "solo";
+  startsAt: string | null;
+  done: boolean;
+};
 
 export type WeekData = { slots: AgendaSlot[]; bookings: AgendaBooking[]; sessions: AgendaSession[] };
 
@@ -34,7 +46,7 @@ function intakeOf(v: unknown): IntakeStatus {
   return f?.status === "recu" ? "recu" : f?.status === "en_attente" ? "en_attente" : null;
 }
 
-/** Créneaux, bilans et séances planifiées de la semaine commençant au lundi donné (heure de Paris). */
+/** Créneaux, bilans et séances (encadrées et en autonomie, faites ou à venir) de la semaine commençant au lundi donné (heure de Paris). */
 export async function getWeek(supabase: Supabase, coachId: string, monday: string): Promise<WeekData> {
   const from = parisToUtc(monday, "00:00").toISOString();
   const to = parisToUtc(addDays(monday, 7), "00:00").toISOString();
@@ -57,12 +69,13 @@ export async function getWeek(supabase: Supabase, coachId: string, monday: strin
       .order("starts_at"),
     supabase
       .from("client_sessions")
-      .select("id, client_id, label, name, date, clients!inner(coach_id, profiles!clients_profile_id_fkey(full_name))")
+      .select("id, client_id, label, name, date, mode, starts_at, status, clients!inner(coach_id, profiles!clients_profile_id_fkey(full_name))")
       .eq("clients.coach_id", coachId)
-      .eq("status", "planned")
+      .in("status", ["planned", "done"])
       .gte("date", monday)
       .lte("date", addDays(monday, 6))
-      .order("date"),
+      .order("date")
+      .order("starts_at", { nullsFirst: false }),
   ]);
   if (slotsRes.error) throw new Error("Impossible de charger les créneaux : " + slotsRes.error.message);
   if (bookingsRes.error) throw new Error("Impossible de charger les bilans : " + bookingsRes.error.message);
@@ -89,13 +102,19 @@ export async function getWeek(supabase: Supabase, coachId: string, monday: strin
     })),
     sessions: (sessionsRes.data ?? []).map((s) => {
       const client = one(s.clients as unknown as { profiles: { full_name: string } | { full_name: string }[] | null } | null);
+      const name = one(client?.profiles)?.full_name ?? "Coaché";
+      const presentiel = s.mode === "presentiel";
       return {
         id: s.id,
         clientId: s.client_id,
-        name: one(client?.profiles)?.full_name ?? "Coaché",
+        name,
+        firstName: name.split(/\s+/)[0] || name,
         label: s.label,
         sessionName: s.name,
-        day: s.date,
+        day: presentiel && s.starts_at ? parisDate(s.starts_at) : s.date,
+        mode: presentiel ? "presentiel" : "solo",
+        startsAt: presentiel ? (s.starts_at ?? null) : null,
+        done: s.status === "done",
       };
     }),
   };

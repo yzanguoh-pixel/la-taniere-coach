@@ -92,3 +92,16 @@ export function keyLoad(exercises: { name: string; sets: { target_load_kg: numbe
   }
   return best;
 }
+
+/** Lundi et dimanche (AAAA-MM-JJ) de la semaine qui contient `today`. */
+export function weekBounds(today: string): { start: string; end: string } {
+  const t = Date.parse(`${today}T00:00:00Z`);
+  const dow = (new Date(t).getUTCDay() + 6) % 7; // lundi = 0
+  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  return { start: iso(t - dow * 864e5), end: iso(t + (6 - dow) * 864e5) };
+}
+
+/** « lun. 23 » pour la liste de la semaine. */
+export function shortWeekday(iso: string): string {
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", timeZone: "UTC" });
+}
