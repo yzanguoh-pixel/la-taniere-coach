@@ -10,7 +10,7 @@ export default function CoacheLayout({ children }: { children: React.ReactNode }
           <LogoMark size={22} />
           La Tanière
         </span>
-        <span className="grid size-8 place-items-center rounded-full bg-ciel text-[12px] font-semibold text-ciel-fonce" aria-label="Léa Martin">LM</span>
+        <span className="grid size-8 place-items-center rounded-full bg-olive-pale text-[12px] font-semibold text-olive-fonce" aria-label="Léa Martin">LM</span>
       </header>
       <main className="px-5 pb-28 pt-6">{children}</main>
       <TabBar />

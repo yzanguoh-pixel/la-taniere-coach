@@ -46,7 +46,7 @@ function CoachNavView({ pathname }: { pathname: string }) {
       </nav>
       <div className="mt-auto border-t border-separateur pt-4">
         <div className="mb-2 flex items-center gap-3 px-3">
-          <span className="grid size-9 place-items-center rounded-full bg-ciel text-[13px] font-semibold text-ciel-fonce">KB</span>
+          <span className="grid size-9 place-items-center rounded-full bg-olive-pale text-[13px] font-semibold text-olive-fonce">KB</span>
           <div className="leading-tight">
             <p className="text-[15px] font-semibold">Karim B.</p>
             <p className="text-legende text-texte-2">Coach sportif</p>
