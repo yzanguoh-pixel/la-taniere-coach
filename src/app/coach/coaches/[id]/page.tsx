@@ -6,6 +6,7 @@ import { coachSupabase } from "@/lib/coach/supabase";
 import { getClientFile, type ClientFile } from "@/lib/coach/queries";
 import { feelingLabel, firstName, fmtDateTime, fmtKg, relativeTime, urgencyOf } from "@/lib/coach/format";
 import { listThread } from "@/lib/messages/thread";
+import { ActivitiesCard } from "@/components/connexions/ActivitiesCard";
 import { AdjustLoad } from "@/components/coach/AdjustLoad";
 import { ClientThread } from "@/components/coach/ClientThread";
 import { PlanVsDone } from "@/components/coach/PlanVsDone";
@@ -130,6 +131,13 @@ async function Fiche({ params }: Props) {
             {file.sessionsPerWeek != null && <Fact label="Rythme" value={`${file.sessionsPerWeek} séance${file.sessionsPerWeek > 1 ? "s" : ""} par semaine`} />}
             {file.weightKg != null && <Fact label="Poids" value={`${fmtKg(file.weightKg)} kg`} />}
           </dl>
+          <Link
+            href={`/coach/coaches/${file.id}/nutrition`}
+            className="liste-groupee flex min-h-11 items-center justify-between px-4 py-3 font-semibold text-olive-fonce hover:bg-fond"
+          >
+            Nutrition de {name} <span aria-hidden>›</span>
+          </Link>
+          <ActivitiesCard clientId={file.id} firstName={name} />
         </aside>
       </div>
 
