@@ -56,3 +56,10 @@
 - Histoire de Léa vérifiée : squat 50 → 60 kg, retour « Squat facile, j'aurais pu mettre +5 kg », RPE 6.
 - Audit sécurité : helpers RLS fermés aux visiteurs anonymes, déclencheur non appelable, search_path figé. `book_slot` et `submit_intake` restent publics (prise de rendez-vous). Reste : activer la protection contre les mots de passe compromis (réglage Auth).
 - En attente : dépôt GitHub puis déploiement Vercel (connexion de démo testée de bout en bout à ce moment-là).
+
+## Sprint 0 — validé en ligne (25/11/2026)
+- Dépôt GitHub privé `yzanguoh-pixel/la-taniere-coach`, projet Vercel `la-taniere-coach` (variables d'environnement posées, identifiants de démo en « sensitive »).
+- Production : https://la-taniere-coach.vercel.app — construction OK.
+- Testé en ligne : « Je suis Karim » → /coach ; « Je suis Léa » → /app (connexion de démo côté serveur contre Supabase).
+- Identité olive appliquée (palette, logo, navigation) ; écrans métier = maquettes, à remplir à partir du Sprint 1.
+- À faire par le PO : protection de déploiement Vercel sur « Preview uniquement » pour que le jury accède à la production sans compte Vercel.
