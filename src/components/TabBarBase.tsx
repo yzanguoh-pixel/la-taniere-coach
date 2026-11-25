@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { NavIcon } from "./NavIcon";
 import { isActive, type NavItem } from "./coach-nav-items";
 
-/** Barre d'onglets blanche translucide, onglet actif en #1D1D1F. */
+/** Barre d'onglets blanche translucide, onglet actif en olive foncé. */
 type Props = { items: NavItem[]; label: string; extraActive?: (pathname: string, href: string) => boolean; className?: string };
 
 /** Le chemin courant n'est connu qu'au moment de la requête : la barre est prérendue sans onglet actif, puis complétée. */
@@ -32,7 +32,7 @@ function TabBarView({ items, label, extraActive, className = "", pathname }: Pro
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${active ? "text-texte" : "text-icone"}`}
+                className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${active ? "text-olive-fonce" : "text-icone"}`}
               >
                 <NavIcon name={item.icon} className="size-6" />
                 {item.label}

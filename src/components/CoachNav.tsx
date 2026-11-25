@@ -35,10 +35,10 @@ function CoachNavView({ pathname }: { pathname: string }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors ${
-                active ? "bg-separateur font-semibold text-texte" : "font-medium text-texte-2 hover:bg-separateur/70 hover:text-texte"
+                active ? "bg-olive-pale font-semibold text-olive-fonce" : "font-medium text-texte-2 hover:bg-separateur/70 hover:text-texte"
               }`}
             >
-              <NavIcon name={item.icon} className={`size-5 ${active ? "text-texte" : "text-icone"}`} />
+              <NavIcon name={item.icon} className={`size-5 ${active ? "text-olive-fonce" : "text-icone"}`} />
               {item.label}
             </Link>
           );

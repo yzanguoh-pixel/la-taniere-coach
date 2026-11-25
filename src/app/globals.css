@@ -1,20 +1,26 @@
 @import "tailwindcss";
 
-/* Design system La Tanière : clair, épuré, pastel (CLAUDE.md), inspiré des apps iOS. */
+/* Design system La Tanière : identité olive (même palette que la démo), soin des interfaces iOS.
+   Contrastes : blanc sur olive-fonce 7,7:1 ; texte sur olive 6,2:1 ; jamais de texte blanc sur --color-olive. */
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), sans-serif;
 
-  --color-fond: #f5f5f7;
+  --color-fond: #f8f7f3;
   --color-carte: #ffffff;
-  --color-separateur: #f0f0f2;
-  --color-bordure: #e5e5ea;
-  --color-texte: #1d1d1f;
-  --color-texte-2: #6e6e73;
-  --color-icone: #8e8e93;
+  --color-separateur: #edece5;
+  --color-bordure: #e4e3da;
+  --color-texte: #22251f;
+  --color-texte-2: #5e6358;
+  --color-icone: #6a6f63;
 
-  --color-sauge: #e3f0e5;
-  --color-sauge-fonce: #2e6b43;
-  --color-sauge-vif: #6fb585;
+  --color-olive: #a3a77d;
+  --color-olive-fonce: #50563b;
+  --color-olive-survol: #434831;
+  --color-olive-pale: #eceedf;
+
+  --color-sauge: #eceedf;
+  --color-sauge-fonce: #50563b;
+  --color-sauge-vif: #a3a77d;
   --color-lavande: #eceafb;
   --color-lavande-fonce: #4f45a8;
   --color-ciel: #e1eefa;
@@ -27,9 +33,10 @@
   --radius-carte: 20px;
   --radius-carte-lg: 24px;
 
-  --shadow-legere: 0 1px 2px rgb(0 0 0 / 0.04), 0 2px 8px rgb(0 0 0 / 0.03);
+  --shadow-legere: 0 1px 2px rgb(34 37 31 / 0.04), 0 2px 8px rgb(34 37 31 / 0.04);
+  --shadow-flottante: 0 16px 48px rgb(34 37 31 / 0.16);
 
-  --text-titre: 34px;
+  --text-titre: 38px;
   --text-titre--line-height: 1.1;
   --text-titre--letter-spacing: -0.025em;
   --text-titre--font-weight: 700;
@@ -40,6 +47,13 @@
   --text-corps--line-height: 1.45;
   --text-legende: 13px;
   --text-legende--line-height: 1.35;
+}
+
+@media (max-width: 720px) {
+  :root { --text-titre: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }
 
 @layer base {
@@ -55,7 +69,7 @@
     -webkit-font-smoothing: antialiased;
   }
   :focus-visible {
-    outline: 3px solid var(--color-ciel-fonce);
+    outline: 2px solid var(--color-olive-fonce);
     outline-offset: 2px;
     border-radius: 10px;
   }
@@ -70,7 +84,7 @@
     border-top: 1px solid var(--color-separateur);
   }
   .btn-principal {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-texte px-5 text-[17px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-olive-fonce px-5 text-[17px] font-semibold text-white transition-[transform,background-color] duration-150 hover:bg-olive-survol active:scale-[0.98] disabled:opacity-50;
   }
   .btn-secondaire {
     @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-separateur px-5 text-[17px] font-semibold text-texte transition-transform active:scale-[0.98];
