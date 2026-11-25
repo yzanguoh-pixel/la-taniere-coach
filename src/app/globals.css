@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* Design system La Tanière : clair, épuré, pastel (CLAUDE.md), inspiré des apps iOS. */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), sans-serif;
+
+  --color-fond: #f5f5f7;
+  --color-carte: #ffffff;
+  --color-separateur: #f0f0f2;
+  --color-bordure: #e5e5ea;
+  --color-texte: #1d1d1f;
+  --color-texte-2: #6e6e73;
+  --color-icone: #8e8e93;
+
+  --color-sauge: #e3f0e5;
+  --color-sauge-fonce: #2e6b43;
+  --color-sauge-vif: #6fb585;
+  --color-lavande: #eceafb;
+  --color-lavande-fonce: #4f45a8;
+  --color-ciel: #e1eefa;
+  --color-ciel-fonce: #1e5e9c;
+  --color-beurre: #fbf2d2;
+  --color-beurre-fonce: #7a5a00;
+  --color-peche: #fde7dc;
+  --color-peche-fonce: #a1471b;
+
+  --radius-carte: 20px;
+  --radius-carte-lg: 24px;
+
+  --shadow-legere: 0 1px 2px rgb(0 0 0 / 0.04), 0 2px 8px rgb(0 0 0 / 0.03);
+
+  --text-titre: 34px;
+  --text-titre--line-height: 1.1;
+  --text-titre--letter-spacing: -0.025em;
+  --text-titre--font-weight: 700;
+  --text-sous-titre: 20px;
+  --text-sous-titre--line-height: 1.25;
+  --text-sous-titre--font-weight: 600;
+  --text-corps: 17px;
+  --text-corps--line-height: 1.45;
+  --text-legende: 13px;
+  --text-legende--line-height: 1.35;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-fond);
+    color: var(--color-texte);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-ciel-fonce);
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+}
+
+@layer components {
+  /* Liste groupée façon iOS */
+  .liste-groupee {
+    @apply overflow-hidden rounded-[20px] bg-carte shadow-legere;
+  }
+  .liste-groupee > * + * {
+    border-top: 1px solid var(--color-separateur);
+  }
+  .btn-principal {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-texte px-5 text-[17px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-50;
+  }
+  .btn-secondaire {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-separateur px-5 text-[17px] font-semibold text-texte transition-transform active:scale-[0.98];
+  }
+  .barre-translucide {
+    @apply border-bordure bg-white/80 backdrop-blur-xl backdrop-saturate-150;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
