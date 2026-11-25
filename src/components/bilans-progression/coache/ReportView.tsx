@@ -1,6 +1,6 @@
 import type { ProgressReportData } from "@/lib/bilans-progression/types";
 import { goalRatio } from "@/lib/bilans-progression/coache/parse";
-import { nb, periodLabel, sentDate, signed } from "@/lib/bilans-progression/coache/format";
+import { nb, sentDate, signed } from "@/lib/bilans-progression/coache/format";
 import { LiftWeeksChart, RegularityChart, WeightChart } from "./Charts";
 
 /** Vue complète d'un bilan de progression côté coaché (composant d'affichage pur, sans accès aux données). */
@@ -39,7 +39,7 @@ export function ReportHeader({ meta, coachFirstName }: { meta: ReportViewMeta; c
   const sent = sentDate(meta.sentAt);
   return (
     <header>
-      <p className="text-[15px] font-medium text-texte-2">{`Bilan ${periodLabel(meta.periodStart, meta.periodEnd)}`}</p>
+      <p className="text-[15px] font-medium text-texte-2">Bilan de progression</p>
       <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] [overflow-wrap:anywhere]">{meta.title}</h1>
       <p className="mt-1 text-[15px] text-texte-2">{`Envoyé par ${coachFirstName}${sent ? ` le ${sent}` : ""}`}</p>
     </header>
