@@ -25,3 +25,25 @@
 **Points pour la rétro**
 - Récupérer le dossier `maquettes/` et `assets/` du kit avant le sprint 1 pour la fidélité visuelle.
 - Valider la connexion de démo dès que le projet Supabase et les comptes existent.
+
+### Données
+
+**Stories terminées**
+- `supabase/migrations/0001_schema.sql` : tout le modèle de CLAUDE.md (profils, coachés, prospects et questionnaires, créneaux, exercices, modèles, copies personnalisées `client_programs` → séances → exercices → séries, retours de séance, messages texte/événement, aliments, objectifs, plans types et copies, recettes, journal, compléments, liste de courses, pesées, activités, abonnements, factures, intégrations, configuration). Notes privées du coach dans une table à part (`coach_notes`).
+- `supabase/migrations/0002_rls.sql` : RLS sur toutes les tables. Fonctions `is_coach()`, `my_coach_id()`, `my_client_id()`, `my_role()`, `coach_owns_client()`. Le coach gère ses coachés, le coaché ne voit que ses données, les catalogues sont lisibles par tout compte connecté, le prospect (anon) réserve via `book_slot()` / `submit_intake()` et ne relit rien, Strava jamais visible par le coach. Un créneau réservé disparaît (déclencheur).
+- `supabase/migrations/0003_demo_seed.sql` (généré par `scripts/generate-demo-seed.py` depuis `scripts/demo_data.py`) : `seed_demo()` et `reset_demo()` (coach uniquement, ne touche pas aux comptes auth). Karim, 10 coachés, 3 prospects (Nora et Emma questionnaire reçu, Lucas en attente), 7 modèles, 6 plans alimentaires, 11 recettes, 82 exercices, 202 aliments, abonnements à prix `null` (affichés `[PRIX]` via `app_config`), créneaux sur 2 semaines. Histoire de Léa : copie « Force bas du corps » (fentes → step-up), squat de 50 à 60 kg, retour « Squat facile, j'aurais pu mettre +5 kg » RPE 6, objectif 70 kg, journal du lundi à 1 276 / 2 100 kcal. Dates relatives au jour du reset.
+- `scripts/create-demo-users.ts` : crée ou met à jour les 11 comptes (Karim et Léa depuis `DEMO_*`, autres coachés avec mot de passe aléatoire, `demo_key` dans les métadonnées), puis appelle `seed_demo()`. `npx tsx --env-file=.env.local scripts/create-demo-users.ts`.
+- `scripts/rls-test.mjs` : rejoue les migrations et le seed dans PGlite avec un faux schéma `auth` et les droits par défaut de Supabase, puis 51 vérifications (seed, RLS coaché / coach / anon, `reset_demo()`). Résultat : 51/51. Contre-épreuve : en désactivant la RLS de `clients`, 7 tests échouent comme attendu.
+
+**Simplifications**
+- Aliments et exercices saisis à la main (valeurs proches de CIQUAL, source `coach`) : le projet `coaching-hub` n'est pas accessible ici et ne doit pas être modifié.
+- Les comptes auth sont retrouvés par `raw_user_meta_data->>'demo_key'` plutôt que par e-mail : les e-mails de démo restent dans l'environnement.
+- Le coaché peut mettre à jour ses séances et séries (statut, réalisé) ligne entière : pas de restriction par colonne, suffisant pour la démo.
+
+**Obstacles**
+- PGlite n'a pas `pgcrypto` : on s'appuie sur `gen_random_uuid()` natif (Postgres 13+), identique sur Supabase.
+- Supabase accorde par défaut l'exécution des fonctions `public` à `anon` et `authenticated` : `seed_demo()` et la fonction interne de copie sont révoquées explicitement.
+
+**Points pour la rétro**
+- Ordre de mise en route : migrations → `create-demo-users.ts` → (seed automatique) ; avant la soutenance, bouton « Réinitialiser la démo ».
+- PGlite valide la logique SQL et la RLS, pas PostgREST ni l'authentification réelle : refaire un passage sur le vrai projet Supabase.
