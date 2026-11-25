@@ -10,7 +10,7 @@ export default function EntryPage() {
   const configured = isSupabaseConfigured();
   const choices = [
     { role: "coach", title: "Je suis Karim", sub: "Coach sportif · tableau de bord, retours, programmes", initials: "KB", tone: "bg-sauge text-sauge-fonce", Icon: IconCoaches },
-    { role: "coache", title: "Je suis Léa", sub: "Coachée · séance du jour, retour, messages", initials: "LM", tone: "bg-ciel text-ciel-fonce", Icon: IconSeance },
+    { role: "coache", title: "Je suis Léa", sub: "Coachée · séance du jour, retour, messages", initials: "LM", tone: "bg-olive-pale text-olive-fonce", Icon: IconSeance },
   ] as const;
 
   return (
