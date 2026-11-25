@@ -152,8 +152,8 @@ function SessionBlock({ session: s }: { session: AgendaSession }) {
         aria-label={`${time}, séance encadrée avec ${s.name} : ${s.sessionName}, ${s.done ? "faite" : "à venir"}`}
         className={`flex min-h-11 flex-col gap-0.5 px-4 py-2.5 transition-colors ${tone}`}
       >
-        <span className="flex items-center justify-between gap-2">
-          <span className="text-[15px] font-semibold tabular-nums">{time}</span>
+        <span className="flex flex-wrap items-center justify-between gap-x-2">
+          <span className="whitespace-nowrap text-[15px] font-semibold tabular-nums">{time}</span>
           {s.done ? (
             <span className="inline-flex shrink-0 items-center gap-1 text-legende font-semibold">
               <Check />

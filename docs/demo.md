@@ -18,8 +18,8 @@ En démo, on ne tape aucun mot de passe : les boutons « Je suis Karim » et « 
 
 - La réinitialisation recrée déjà une demande « Nora Benali » (visio, questionnaire reçu, premier créneau libre après J+1). La réservation faite en direct crée une deuxième ligne « Nora Benali ». On ouvre celle qui porte la date et l'heure réservées en direct.
 - Léa a déjà un retour non traité dans les données (« Squat facile, j'aurais pu mettre +5 kg », RPE 6). Après la démo, il reste dans la file : c'est normal, l'ajustement ne traite que le dernier retour.
-- Les séances passées et celles du jour sont marquées faites par la réinitialisation. La carte de Léa affiche donc en général « Ta prochaine séance » (et non « Ta séance du jour »). On parle quand même de « séance du jour » à l'oral.
-- Le titre de la séance dépend du jour de la soutenance : « Séance B — Soulevé de terre » avant le jeudi, « Séance A — Squat » à partir du jeudi.
+- Après réinitialisation, Léa a toujours une séance prévue le jour même : carte « Ta séance du jour ». Cette séance est en autonomie (badge « En autonomie ») : Léa s'entraîne seule et Karim suit à distance. Sa séance de lundi était encadrée (« Présentiel · 17:00 »). Le titre exact dépend du jour.
+- Séances encadrées : Karim entraîne le coaché à la salle (1 h), selon la formule (Suivi mensuel et Trimestre : 1 par semaine ; Suivi premium : 2). Les autres séances se font en autonomie. On le voit sur l'accueil de Léa (badges), sur la fiche coaché (« Formule », « Prochaine séance encadrée »), dans les Abonnements et dans l'Agenda de Karim (blocs olive foncé, environ 13 par semaine).
 - L'échéance de l'abonnement de Léa est à J-5 après réinitialisation.
 
 ## 0. Avant de commencer (hors chrono, 10 min avant)
@@ -73,7 +73,7 @@ Clics :
 - URL : /coach/agenda, puis /coach/bilans/<id>, puis /coach/programmes/<id>.
 
 Clics :
-1. Menu de gauche : « Agenda ».
+1. Menu de gauche : « Agenda ». Descendre 3 secondes sur la semaine : « 13 séances encadrées · 2 bilans · … », blocs olive foncé = Karim à la salle avec un coaché, et sous la grille « Séances en autonomie cette semaine ». Phrase : « Karim voit d'un coup d'œil ce qu'il fait en présentiel et ce que ses coachés font seuls. » Remonter.
 2. Bloc « Demandes de bilan » : cliquer la ligne « Nora Benali » qui porte la date et l'heure réservées en (a) (badge « Questionnaire reçu », « Bilan offert · Visio »).
 3. Montrer, sans cliquer : « Point de vigilance » en orange (« Douleur lombaire en fin de journée », « Sommeil court : 6 h par nuit »), « Synthèse du questionnaire », et « Modèle conseillé » : « Mobilité et dos ».
 4. Descendre à « Convertir en coachée » : « Modèle de départ » est déjà sur « Mobilité et dos (conseillé) ».
@@ -94,7 +94,7 @@ Clics :
 
 Clics :
 1. Aller sur https://la-taniere-coach.vercel.app et cliquer « Je suis Léa ».
-2. Page « Bonjour » : carte « Ta prochaine séance » (ou « Ta séance du jour » si une séance est prévue aujourd'hui). Cliquer « Voir ma séance ».
+2. Page « Bonjour » : carte « Ta séance du jour », badge « En autonomie ». Montrer la liste « Cette semaine » : lundi « Présentiel · 17:00 » (avec Karim à la salle), aujourd'hui en autonomie. Cliquer « Voir ma séance ».
 3. Série 1 du premier exercice : laisser « Répétitions » et « Charge (kg) » préremplis, cliquer « Valider ». Faire de même pour la série 2. La barre « Progression » avance.
 4. Cliquer « Terminer la séance ».
 5. « Effort ressenti (RPE) » : cliquer « 6 ».
@@ -102,7 +102,7 @@ Clics :
 7. « Un mot pour Karim (facultatif) » : Séance facile, je peux monter au squat.
 8. Cliquer « Envoyer mon retour ».
 
-- Ce qu'on dit : « Léa répond en 30 secondes, au bon moment ; Karim n'a plus besoin de la relancer. »
+- Ce qu'on dit : « Léa a 3 séances par semaine dont 2 avec Karim à la salle. Aujourd'hui elle est seule : elle note ses séries et répond en 30 secondes, Karim suit à distance sans la relancer. »
 - À l'écran : « Merci, ton retour a été envoyé à Karim. » sur la page d'accueil de Léa.
 
 ### (d) 6:30 – 8:00 · Karim voit l'alerte et ajuste la charge
