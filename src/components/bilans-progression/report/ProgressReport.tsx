@@ -410,7 +410,7 @@ export function ProgressReport({ data, meta, variant, exerciseParam, viewParam }
   const initialId = data.lifts.find((l) => l.exerciseId === exerciseParam)?.exerciseId ?? data.lifts[0]?.exerciseId ?? "";
 
   return (
-    <div className="min-w-0">
+    <div className="@container min-w-0">
       <ReportHeader meta={meta} variant={variant} />
       {meta.coachNote && <CoachNote note={meta.coachNote} coachName={meta.coachName} level={L} />}
 
@@ -432,7 +432,7 @@ export function ProgressReport({ data, meta, variant, exerciseParam, viewParam }
       {hasProfile && (
         <Section id={SECTIONS.profil} title="Ton profil" level={L}>
           <div className="liste-groupee">
-            <div className="px-2 py-4 sm:p-5">
+            <div className="px-2 py-4 @xl:p-5">
               <Radar profile={data.profile} beforeLabel={`Il y a ${nbWeeks} semaines`} afterLabel="Aujourd’hui" />
             </div>
             <ul className="m-0 list-none p-0 [&>li+li]:border-t [&>li+li]:border-separateur">
@@ -450,7 +450,7 @@ export function ProgressReport({ data, meta, variant, exerciseParam, viewParam }
           <H level={L} id="bilan-chiffres-titre" className="mx-1 text-sous-titre">
             En chiffres
           </H>
-          <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <dl className="m-0 grid grid-cols-2 gap-3 @xl:grid-cols-3">
             {hasSessions && (
               <Tile
                 accent
@@ -575,7 +575,7 @@ export function ProgressReport({ data, meta, variant, exerciseParam, viewParam }
                   {f.difficile > 0 && <span className="h-full bg-beurre-fonce" style={{ width: `${(f.difficile / feelingsTotal) * 100}%` }} />}
                   {f.douleur > 0 && <span className="h-full bg-peche-fonce" style={{ width: `${(f.douleur / feelingsTotal) * 100}%` }} />}
                 </span>
-                <dl className="m-0 mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+                <dl className="m-0 mt-3 grid grid-cols-2 gap-x-4 gap-y-2 @xl:grid-cols-4">
                   {(
                     [
                       ["Facile", f.facile, "bg-olive"],
@@ -587,7 +587,7 @@ export function ProgressReport({ data, meta, variant, exerciseParam, viewParam }
                     <div key={label} className="flex items-center gap-2">
                       <span aria-hidden="true" className={`size-3 shrink-0 rounded-full ${color}`} />
                       <dt className="text-[15px]">{label}</dt>
-                      <dd className="m-0 ml-auto text-[17px] font-bold tabular-nums sm:ml-1">{v}</dd>
+                      <dd className="m-0 ml-auto text-[17px] font-bold tabular-nums @xl:ml-1">{v}</dd>
                     </div>
                   ))}
                 </dl>
