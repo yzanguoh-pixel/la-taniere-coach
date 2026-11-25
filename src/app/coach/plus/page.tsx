@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { coachNav } from "@/components/coach-nav-items";
+import { coachNav, coachTabs } from "@/components/coach-nav-items";
 import { NavIcon } from "@/components/NavIcon";
 import { IconChevron } from "@/components/icons";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export const metadata: Metadata = { title: "Plus" };
 
-const tabbed = new Set(["/coach", "/coach/coaches", "/coach/agenda", "/coach/nutrition"]);
+const tabbed = new Set(coachTabs.map((t) => t.href));
 
 /** Menu « Plus » de l'espace coach sur mobile (maquette CM12-Plus). */
 export default function PlusPage() {

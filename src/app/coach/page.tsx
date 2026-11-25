@@ -61,7 +61,7 @@ function TodayAtGym({ items }: { items: CoachedToday[] }) {
       {items.map((s, i) => (
         <span key={s.sessionId}>
           {i > 0 && <span className="text-texte-2"> · </span>}
-          <Link href={`/coach/coaches/${s.clientId}`} className="inline-block whitespace-nowrap font-semibold text-olive-fonce hover:underline">
+          <Link href={`/coach/seances/${s.sessionId}`} className="inline-block whitespace-nowrap font-semibold text-olive-fonce hover:underline">
             <span className="tabular-nums">{sessionHour(s.startsAt) || "—"}</span> {s.firstName}
           </Link>
         </span>

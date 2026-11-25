@@ -148,7 +148,7 @@ function SessionBlock({ session: s }: { session: AgendaSession }) {
   return (
     <li>
       <Link
-        href={`/coach/coaches/${s.clientId}`}
+        href={`/coach/seances/${s.id}`}
         aria-label={`${time}, séance encadrée avec ${s.name} : ${s.sessionName}, ${s.done ? "faite" : "à venir"}`}
         className={`flex min-h-11 flex-col gap-0.5 px-4 py-2.5 transition-colors ${tone}`}
       >

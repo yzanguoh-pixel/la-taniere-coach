@@ -6,9 +6,21 @@ import { MESSAGE_MAX_LENGTH } from "@/lib/messages/format";
 
 const initial: SendMessageState = { status: "idle" };
 
-/** Zone de saisie du coaché : envoi via Server Action, erreur sous le champ, confirmation après envoi. */
-export function ComposeForm({ coachName, hasUnread }: { coachName: string; hasUnread: boolean }) {
-  const [state, action, pending] = useActionState(sendMessageAction, initial);
+type Props = {
+  /** Prénom du destinataire (« Karim » côté coaché, « Léa » côté coach). */
+  coachName: string;
+  hasUnread: boolean;
+  /** Action d'envoi ; par défaut celle du coaché connecté. Côté coach : sendCoachMessageAction liée au coaché. */
+  sendAction?: (prev: SendMessageState, formData: FormData) => Promise<SendMessageState>;
+  /** Action de marquage lu à l'ouverture ; par défaut celle du coaché connecté. */
+  markReadAction?: () => Promise<void>;
+  /** Nombre de lignes du champ (3 par défaut ; 2 pour une zone de saisie fixe plus compacte). */
+  rows?: number;
+};
+
+/** Zone de saisie : envoi via Server Action, erreur sous le champ, confirmation après envoi. */
+export function ComposeForm({ coachName, hasUnread, sendAction = sendMessageAction, markReadAction = markThreadReadAction, rows = 3 }: Props) {
+  const [state, action, pending] = useActionState(sendAction, initial);
   const id = useId();
   const fieldId = `${id}-message`;
   const errorId = `${id}-erreur`;
@@ -17,8 +29,8 @@ export function ComposeForm({ coachName, hasUnread }: { coachName: string; hasUn
 
   // Les messages du coach affichés à l'ouverture sont marqués comme lus (le repère « Nouveau » reste visible pendant la lecture).
   useEffect(() => {
-    if (hasUnread) void markThreadReadAction();
-  }, [hasUnread]);
+    if (hasUnread) void markReadAction();
+  }, [hasUnread, markReadAction]);
 
   return (
     <form action={action} noValidate className="flex flex-col gap-2">
@@ -29,13 +41,13 @@ export function ComposeForm({ coachName, hasUnread }: { coachName: string; hasUn
         key={state.sentAt ?? "brouillon"}
         id={fieldId}
         name="message"
-        rows={3}
+        rows={rows}
         maxLength={MESSAGE_MAX_LENGTH}
         defaultValue={state.status === "error" ? state.value : ""}
         placeholder={`Écrire à ${coachName}…`}
         aria-invalid={hasError || undefined}
         aria-describedby={hasError ? errorId : undefined}
-        className={`block min-h-24 w-full resize-y rounded-[16px] border bg-carte px-4 py-3 text-corps text-texte placeholder:text-texte-2 focus-visible:outline-2 focus-visible:outline-olive-fonce ${
+        className={`block ${rows >= 3 ? "min-h-24" : "min-h-16"} w-full resize-y rounded-[16px] border bg-carte px-4 py-3 text-corps text-texte placeholder:text-texte-2 focus-visible:outline-2 focus-visible:outline-olive-fonce ${
           hasError ? "border-peche-fonce" : "border-bordure"
         }`}
       />

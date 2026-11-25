@@ -164,7 +164,7 @@ async function Fiche({ params }: Props) {
 
       <section aria-labelledby="fil-titre" className="flex flex-col gap-3">
         <h2 id="fil-titre" className="text-sous-titre">Messages avec {name}</h2>
-        <ClientThread messages={messages} firstName={name} now={now} />
+        <ClientThread messages={messages} firstName={name} now={now} clientId={file.id} />
       </section>
     </article>
   );

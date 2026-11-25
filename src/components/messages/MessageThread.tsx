@@ -11,10 +11,12 @@ type Props = {
   otherName: string;
   /** Libellé sous les bulles de l'interlocuteur (« Karim, ton coach »). */
   otherLabel?: string;
+  /** Texte du fil vide (par défaut, celui de l'espace coaché). */
+  emptyText?: string;
 };
 
 /** Fil de messages : bulles texte et pastilles « événement » centrées, groupées par jour. */
-export function MessageThread({ messages, viewer, otherName, otherLabel }: Props) {
+export function MessageThread({ messages, viewer, otherName, otherLabel, emptyText }: Props) {
   if (messages.length === 0) {
     return (
       <div className="liste-groupee flex flex-col items-center gap-2 px-6 py-10 text-center">
@@ -23,7 +25,7 @@ export function MessageThread({ messages, viewer, otherName, otherLabel }: Props
         </span>
         <p className="mt-1 font-semibold">Pas encore d’échange</p>
         <p className="text-[15px] text-texte-2">
-          Écris ton premier message ou termine une séance pour envoyer un retour à {otherName}.
+          {emptyText ?? `Écris ton premier message ou termine une séance pour envoyer un retour à ${otherName}.`}
         </p>
       </div>
     );

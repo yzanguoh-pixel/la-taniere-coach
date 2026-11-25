@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { SessionBlock, SetRow } from "@/lib/coach/queries";
 import { fmtDay, fmtKg } from "@/lib/coach/format";
 import { ModeBadge } from "@/components/seances/ModeBadge";
@@ -28,8 +29,13 @@ export function PlanVsDone({ sessions }: { sessions: SessionBlock[] }) {
               </span>
               <ModeBadge mode={s.mode} startsAt={s.starts_at} compact />
             </h3>
-            <span className="text-legende tabular-nums text-texte-2">
-              Semaine {s.week} · {fmtDay(s.date)}
+            <span className="flex flex-wrap items-baseline gap-x-3">
+              <span className="text-legende tabular-nums text-texte-2">
+                Semaine {s.week} · {fmtDay(s.date)}
+              </span>
+              <Link href={`/coach/seances/${s.id}`} className="inline-flex min-h-11 items-center text-[15px] font-semibold text-olive-fonce hover:underline">
+                Ouvrir la séance<span className="sr-only"> {s.label} du {fmtDay(s.date)}</span>
+              </Link>
             </span>
           </div>
           <div className="overflow-x-auto">
